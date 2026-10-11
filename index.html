@@ -1,0 +1,2884 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crypto Trading Dashboard & AI Agent Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ========================================================
+           VISUAL
+           ======================================================== */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+        :root {
+            /* Cores e visual preferidos dos traders */
+            --cy-bg:        #121212;
+            --cy-surface:   #1E1E1E;
+            --cy-surface2:  #333842;
+            --cy-border:    #2D2D2D;
+            --cy-border2:   #3f3f46;
+
+            --cy-neon:      #d4af37;   /* Ouro Metálico Elegante */
+            --cy-neon-rgb:  212, 175, 55;
+            --cy-neon-glow: rgba(212, 175, 55, 0.15);
+            --cy-neon-dim:  rgba(212, 175, 55, 0.05);
+
+            --cy-gold:      #c5a059;   
+            --cy-gold-glow: rgba(197, 160, 89, 0.18);
+
+            --cy-green:     #10b981;   /* Verde esmeralda suave */
+            --cy-red:       #ef4444;   /* Vermelho corporativo */
+            --cy-yellow:    #f59e0b;
+            --cy-muted:     #8e8e93;
+            --cy-text:      #f5f5f7;
+
+            --font-mono:    'Roboto Mono', monospace;
+            --font-display: 'Inter', sans-serif;
+
+            /* Variáveis do agente IA (sobrescritas pelo JS) */
+            --theme-color:  #d4af37;
+            --theme-rgb:    212, 175, 55;
+            --theme-glow:   rgba(var(--theme-rgb), 0.15);
+            --theme-border: rgba(var(--theme-rgb), 0.22);
+
+            --ai-bg:        var(--cy-bg);
+            --ai-surface:   var(--cy-surface2);
+            --ai-surface2:  #202022;
+            --ai-text: var(--cy-text);
+            --ai-muted:     var(--cy-muted);
+            --ai-green:     var(--cy-green);
+            --ai-red:       var(--cy-red);
+            --ai-yellow:    var(--cy-yellow);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--cy-bg);
+            color: var(--cy-text);
+            font-family: var(--font-display);
+            /* Grade corporativa e sutil */
+            background-image:
+                linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+            background-size: 30px 30px;
+            min-height: 100vh;
+            padding: 18px;
+            overflow-x: hidden;
+        }
+
+        /* ── Scrollbars ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--cy-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--cy-border2); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cy-muted); }
+
+        /* ══════════════════════════════════════
+           Header principal
+           ══════════════════════════════════════ */
+        header {
+            display: flex; align-items: center; margin-bottom: 22px;
+            gap: 14px; justify-content: space-between; flex-wrap: wrap;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--cy-border);
+            position: relative;
+        }
+        /* Linha elegante embaixo do header */
+        header::after {
+            content: '';
+            position: absolute; bottom: -1px; left: 0;
+            width: 80px; height: 2px;
+            background: var(--cy-neon);
+        }
+
+        .header-left { display: flex; align-items: center; gap: 14px; }
+
+        .logo-hexagon {
+            width: 46px; height: 46px;
+            background: linear-gradient(135deg, #2a2a2e, #121212);
+            border: 1px solid var(--cy-neon);
+            border-radius: 8px; /* Mais clean, menos "jogo" */
+            display: flex; align-items: center; justify-content: center;
+            color: var(--cy-neon); font-weight: 900; font-size: 22px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .header-title h1 {
+            color: var(--cy-text);
+            font-size: 16px; font-weight: 600; letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .header-title p { color: var(--cy-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 3px; }
+
+        .status-dot {
+            display: inline-block; width: 6px; height: 6px;
+            background-color: var(--cy-green); border-radius: 50%; margin-right: 6px;
+            box-shadow: 0 0 6px var(--cy-green);
+        }
+
+        /* ── Global Actions ── */
+        .global-actions { display: flex; gap: 8px; width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+
+        .btn-red, .btn-yellow, .btn-green {
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none; box-sizing: border-box;
+            padding: 9px 16px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; font-weight: 500; font-family: var(--font-display);
+            transition: all 0.2s ease; flex: 1; text-align: center;
+            letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .btn-red { background: rgba(239, 68, 68, 0.05); border: 1px solid var(--cy-red); color: var(--cy-red); }
+        .btn-red:hover { background: var(--cy-red); color: #fff; }
+        
+        .btn-yellow { background: var(--cy-surface2); border: 1px solid var(--cy-border2); color: var(--cy-text); }
+        .btn-yellow:hover { border-color: var(--cy-neon); color: var(--cy-neon); background: rgba(212, 175, 55, 0.05); }
+        
+        .btn-green { background: rgba(16, 185, 129, 0.05); border: 1px solid var(--cy-green); color: var(--cy-green); min-width: 140px; }
+        .btn-green:hover { background: var(--cy-green); color: #fff; }
+
+        @keyframes btn-glow-white {
+            0%, 100% { border-color: #fff; color: #fff; background: rgba(255,255,255,0.1); }
+            50% { border-color: var(--cy-neon); color: var(--cy-neon); background: rgba(212, 175, 55, 0.05); }
+        }
+        .btn-glow-white {
+            animation: btn-glow-white 1.5s infinite !important;
+        }
+
+        /* ══════════════════════════════════════
+           NAVEGAÇÃO / TABS
+           ══════════════════════════════════════ */
+        .tabs {
+            display: flex; gap: 8px; margin-bottom: 20px;
+            flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tabs::-webkit-scrollbar { height: 3px; }
+        .tabs::-webkit-scrollbar-thumb { background: var(--cy-border2); border-radius: 3px; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ══════════════════════════════════════
+           PAINÉIS GERAIS
+           ══════════════════════════════════════ */
+        .panel {
+            background: var(--cy-surface);
+            border: 1px solid var(--cy-border);
+            border-radius: 12px; padding: 22px; margin-bottom: 20px;
+            position: relative; overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        .panel-header {
+            color: var(--cy-text); font-size: 13px; font-weight: 600;
+            letter-spacing: 1px; margin-bottom: 18px;
+            text-transform: uppercase; font-family: var(--font-display);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .panel-header::before { content: ''; display: inline-block; width: 4px; height: 14px; background: var(--cy-neon); border-radius: 2px; }
+
+        /* ══════════════════════════════════════
+           MÉTRICAS DO DASHBOARD
+           ══════════════════════════════════════ */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 12px;
+        }
+
+        .metric-card {
+            background: var(--cy-surface2);
+            border: 1px solid var(--cy-border2);
+            border-radius: 8px; padding: 18px 14px; text-align: center;
+            transition: all 0.2s ease; position: relative; overflow: hidden;
+        }
+        .metric-card:hover {
+            border-color: var(--cy-neon);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .metric-title {
+            color: var(--cy-muted); font-size: 11px; margin-bottom: 8px;
+            text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-display);
+        }
+        .metric-value {
+            font-size: 22px; font-weight: 500; font-family: var(--font-mono);
+            color: var(--cy-text);
+        }
+
+        .text-green { color: var(--cy-green) !important; }
+        .text-red   { color: var(--cy-red) !important; }
+        .text-neutral { color: var(--cy-muted) !important; }
+
+        /* ══════════════════════════════════════
+           SEÇÃO DE ATIVOS (SELETOR)
+           ══════════════════════════════════════ */
+        .texto-adicional {
+            color: var(--cy-muted); font-size: 14px; margin-top: 40px;
+            padding-left: 2px; font-family: var(--font-display);
+            letter-spacing: 0.5px;
+        }
+
+        .buttons-wrapper {
+            display: flex; flex-direction: column; gap: 15px;
+            margin-top: 16px; border-top: 1px solid var(--cy-border);
+            padding-top: 22px;
+        }
+
+        /* ══════════════════════════════════════
+           TABELA & PESQUISA
+           ══════════════════════════════════════ */
+        .search-container {
+            display: none; width: 100%; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+            background: var(--cy-surface); padding: 16px; border-radius: 8px;
+            border: 1px solid var(--cy-border);
+            align-items: center; justify-content: flex-start;
+        }
+        .search-container input { border: 1px solid var(--cy-border2); flex: 1; min-width: 130px; }
+
+        .table-container {
+            overflow-x: auto; background: var(--cy-surface2);
+            border: 1px solid var(--cy-border); border-radius: 8px;
+            padding: 0; -webkit-overflow-scrolling: touch;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 2600px; }
+
+        th {
+            background: var(--cy-surface); color: var(--cy-muted);
+            text-transform: uppercase; font-weight: 500;
+            padding: 14px 12px; text-align: left;
+            border-bottom: 1px solid var(--cy-border);
+            white-space: nowrap; font-family: var(--font-display);
+            font-size: 11px; letter-spacing: 0.5px;
+        }
+        .group-header th {
+            text-align: center; border-bottom: 1px solid var(--cy-border2);
+            color: var(--cy-text); background: var(--cy-surface);
+            font-family: var(--font-display); font-weight: 600;
+        }
+        td {
+            padding: 10px 12px; border-bottom: 1px solid var(--cy-border);
+            white-space: nowrap; vertical-align: middle;
+            font-family: var(--font-mono); font-size: 13px;
+        }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* ══════════════════════════════════════
+           INPUTS BASE
+           ══════════════════════════════════════ */
+        input, select, textarea {
+            width: 100%; background: var(--cy-bg);
+            border: 1px solid var(--cy-border2); color: var(--cy-text);
+            padding: 10px 12px; border-radius: 6px;
+            font-family: var(--font-mono); font-size: 13px; min-height: 40px;
+            transition: all 0.2s ease;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--cy-neon);
+            background: #000; box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+        }
+        input[readonly], select[disabled], input[disabled], textarea[readonly].disabled-mode {
+            background: transparent; border-color: transparent; color: var(--cy-text); font-weight: 500; pointer-events: none;
+        }
+        textarea.journal-input {
+            cursor: pointer; resize: none; white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis; height: 40px; line-height: 20px;
+            border: 1px solid var(--cy-border2);
+        }
+        textarea.journal-input:not(.disabled-mode):hover {
+            border-color: var(--cy-neon);
+        }
+
+        /* ══════════════════════════════════════
+           BOTÕES DA TABELA & AÇÕES
+           ══════════════════════════════════════ */
+        .btn-action {
+            background: var(--cy-surface2); border: 1px solid var(--cy-border2);
+            color: var(--cy-text); padding: 10px 16px; border-radius: 6px;
+            cursor: pointer; font-weight: 500; transition: all 0.2s ease; font-size: 13px;
+            font-family: var(--font-display);
+        }
+        .btn-action:hover { border-color: var(--cy-neon); color: var(--cy-neon); background: rgba(212, 175, 55, 0.05); }
+
+        .btn-delete { background: none; border: none; color: var(--cy-red); cursor: pointer; font-size: 20px; font-weight: bold; padding: 5px 12px; opacity: 0.7; transition: opacity 0.2s; }
+        .btn-delete:hover { opacity: 1; }
+
+        .btn-back {
+            background: transparent; border: 1px solid transparent;
+            color: var(--cy-muted); padding: 9px 14px; border-radius: 6px;
+            cursor: pointer; font-weight: 500; transition: all 0.2s ease; font-size: 13px;
+            display: flex; align-items: center; gap: 5px;
+            font-family: var(--font-display);
+        }
+        .btn-back:hover { color: var(--cy-text); background: var(--cy-surface2); }
+
+        /* ══════════════════════════════════════
+           MODAIS
+           ══════════════════════════════════════ */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+            z-index: 1000; justify-content: center; align-items: center; padding: 15px;
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease-in-out; }
+
+        .modal-content {
+            background: var(--cy-surface);
+            border: 1px solid var(--cy-border);
+            border-radius: 12px; width: 100%; max-width: 600px; padding: 26px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; position: relative;
+            max-height: 90vh; /* Permite que o modal seja responsivo */
+            overflow-y: auto; /* Adiciona barra de rolagem quando necessário */
+        }
+        .modal-content.confirm-box, .modal-content.info-box { max-width: 450px; }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { color: var(--cy-text); font-weight: 600; font-size: 16px; text-transform: uppercase; font-family: var(--font-display); letter-spacing: 0.5px; }
+        .modal-close { background: none; border: none; color: var(--cy-muted); font-size: 26px; cursor: pointer; line-height: 1; padding: 0; transition: color 0.2s; }
+        .modal-close:hover { color: var(--cy-red); }
+
+        .modal-textarea {
+            width: 100%; height: 60vh; min-height: 400px;
+            background: var(--cy-bg); border: 1px solid var(--cy-border2);
+            color: var(--cy-text); padding: 16px; border-radius: 8px;
+            font-family: var(--font-mono); font-size: 14px; resize: none;
+            margin-bottom: 20px; line-height: 1.6;
+        }
+        .modal-textarea:focus { border-color: var(--cy-neon); box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2); outline: none; }
+
+        .modal-actions { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+        .btn-save {
+            background: var(--cy-neon); color: #000; border: none;
+            padding: 12px 24px; border-radius: 6px; font-weight: 600;
+            cursor: pointer; width: 100%; font-size: 14px;
+            font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+        }
+        .btn-save:hover { background: #e5c04b; }
+
+        .btn-cancel {
+            background: var(--cy-surface2); color: var(--cy-text);
+            border: 1px solid var(--cy-border2);
+            padding: 12px 24px; border-radius: 6px; cursor: pointer;
+            width: 100%; font-size: 14px; font-family: var(--font-display);
+            transition: all 0.2s ease;
+        }
+        .btn-cancel:hover { border-color: var(--cy-muted); background: var(--cy-border); }
+
+        /* ── AGENTE IA — ESTILOS INTERNOS ── */
+        .ai-app {
+            position: relative; z-index: 1; max-width: 920px;
+            margin: 0 auto; padding: 5px 0 60px;
+            font-family: var(--font-display);
+        }
+
+        .ai-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 0 20px; border-bottom: 1px solid var(--cy-border);
+            margin-bottom: 24px; flex-wrap: wrap; gap: 15px; position: relative;
+        }
+
+        .ai-logo-block { display: flex; align-items: center; gap: 14px; }
+
+        .ai-hex {
+            width: 46px; height: 46px; background: var(--theme-color);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff;
+            flex-shrink: 0; transition: background 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .ai-logo-text h1 { font-size: 18px; font-weight: 600; color: var(--cy-text); letter-spacing: 0.5px; transition: color 0.3s; }
+        .ai-logo-text p  { font-size: 11px; color: var(--ai-muted); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px; }
+
+        .ai-header-status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ai-muted); font-family: var(--font-mono); }
+        .ai-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ai-muted); transition: background 0.3s; }
+        .ai-status-dot.connected { background: var(--ai-green); box-shadow: 0 0 6px var(--ai-green); }
+        .ai-status-dot.error     { background: var(--ai-red); }
+        .ai-status-dot.loading   { background: var(--ai-yellow); animation: ai-pulse 1s ease-in-out infinite; }
+        @keyframes ai-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .config-panel {
+            background: var(--ai-surface); border: 1px solid var(--cy-border);
+            border-radius: 10px; padding: 24px; margin-bottom: 24px;
+            position: relative; overflow: hidden;
+        }
+        .config-panel h2 { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--cy-text); margin-bottom: 18px; font-family: var(--font-display); margin-bottom: 18px; font-family: var(--font-display); }
+
+        .ai-input-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+        .ai-field-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px; }
+        .ai-field-group label { font-size: 11px; color: var(--ai-muted); font-weight: 500; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .provider-toggle { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+        .provider-btn {
+            flex: 1; padding: 10px 14px; border-radius: 6px;
+            border: 1px solid var(--cy-border2);
+            background: var(--cy-surface2); color: var(--ai-muted);
+            font-family: var(--font-display); font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; min-width: 140px;
+        }
+
+        .ai-btn {
+            padding: 10px 22px; border-radius: 6px; border: none; cursor: pointer;
+            font-family: var(--font-display); font-weight: 500; font-size: 13px;
+            transition: all 0.2s ease; letter-spacing: 0.5px; white-space: nowrap;
+        }
+        .ai-btn-theme { background: var(--cy-text); color: #000; font-weight: 600; }
+        .ai-btn-theme:hover:not(:disabled) { background: #fff; }
+        .ai-btn-theme:disabled { background: var(--cy-border); color: var(--ai-muted); cursor: not-allowed; }
+        .ai-btn-outline { background: transparent; border: 1px solid var(--cy-border2); color: var(--cy-text); }
+        .ai-btn-outline:hover:not(:disabled) { border-color: var(--cy-text); background: rgba(255,255,255,0.05); }
+        .ai-btn-ghost { background: transparent; border: 1px solid transparent; color: var(--ai-muted); }
+        .ai-btn-ghost:hover { color: var(--ai-red); }
+
+        /* ── Action Cards ── */
+        .action-bar-container { display: flex; flex-direction: column; margin-bottom: 24px; }
+        .action-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+
+        .action-card {
+            background: var(--ai-surface2); border: 1px solid var(--cy-border2);
+            border-radius: 10px; padding: 22px 18px; text-align: center; cursor: pointer;
+            transition: all 0.2s ease; display: flex; flex-direction: column;
+            align-items: center; gap: 12px; position: relative; overflow: hidden;
+        }
+        .action-card:hover:not(.disabled) {
+            border-color: var(--cy-text); background: var(--cy-border);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .action-card.disabled { opacity: 0.4; cursor: not-allowed; }
+        .action-card.loading { border-color: var(--cy-text); animation: pulse-border 1.5s ease-in-out infinite; }
+        @keyframes pulse-border { 0%,100%{ border-color: var(--cy-border2); } 50%{ border-color: var(--cy-text); } }
+
+        .action-icon  { font-size: 28px; line-height: 1; }
+        .action-label { font-size: 12px; font-weight: 600; color: var(--cy-text); letter-spacing: 0.5px; text-transform: uppercase; font-family: var(--font-display); }
+        .action-sub   { font-size: 11px; color: var(--ai-muted); }
+
+        /* ── Data Sections ── */
+        .data-section { margin-bottom: 24px; }
+        .section-title {
+            font-size: 11px; font-weight: 600; letter-spacing: 1px;
+            text-transform: uppercase; color: var(--ai-muted);
+            margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+            font-family: var(--font-display);
+        }
+        .section-title::after { content: ''; flex: 1; height: 1px; background: var(--cy-border); }
+
+        .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+
+        .data-card {
+            background: var(--ai-surface2); border: 1px solid var(--cy-border2);
+            border-radius: 8px; padding: 16px; transition: all 0.2s ease;
+        }
+        .data-card:hover { border-color: var(--cy-muted); }
+        .data-card .dc-label { font-size: 10px; color: var(--ai-muted); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; font-family: var(--font-display); }
+        .data-card .dc-value { font-family: var(--font-mono); font-size: 16px; font-weight: 500; color: var(--ai-text); }
+        .data-card .dc-sub   { font-size: 11px; color: var(--ai-muted); margin-top: 6px; }
+        .data-card .dc-value.green { color: var(--ai-green); }
+        .data-card .dc-value.red   { color: var(--ai-red); }
+
+        /* ── TF Table ── */
+        .tf-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .tf-table th { font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ai-muted); font-weight: 500; text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--cy-border); font-family: var(--font-display); }
+        .tf-table td { padding: 12px 10px; border-bottom: 1px solid var(--cy-border); font-family: var(--font-mono); font-size: 13px; color: var(--ai-text); vertical-align: middle; }
+        .tf-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .rsi-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--font-mono); }
+        .rsi-badge.oversold   { background: rgba(16, 185, 129, 0.1); color: var(--ai-green); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .rsi-badge.neutral    { background: rgba(245, 158, 11, 0.1);  color: var(--ai-yellow); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .rsi-badge.overbought { background: rgba(239, 68, 68, 0.1); color: var(--ai-red); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+        /* ── Raw Panel ── */
+        .raw-panel { background: var(--ai-surface); border: 1px solid var(--cy-border); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+        .raw-panel-header { padding: 14px 18px; background: var(--ai-surface2); border-bottom: 1px solid var(--cy-border); display: flex; justify-content: space-between; align-items: center; }
+        .raw-panel-header span { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--ai-text); font-family: var(--font-display); }
+        .raw-panel-body { padding: 16px; max-height: 220px; overflow-y: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--cy-muted); white-space: pre-wrap; word-break: break-all; }
+
+        /* ── Result Panel ── */
+        .result-panel {
+            background: var(--ai-surface); border: 1px solid var(--cy-border);
+            border-radius: 10px; overflow: hidden;
+            display: none; transition: border-color 0.3s; margin-bottom: 24px;
+        }
+        .result-panel.visible { display: block; animation: fadeIn 0.3s; }
+        .result-panel-header {
+            padding: 16px 22px; background: var(--cy-surface2);
+            border-bottom: 1px solid var(--cy-border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .result-panel-header h3 { font-size: 13px; font-weight: 600; color: var(--cy-text); letter-spacing: 0.5px; font-family: var(--font-display); }
+        .result-panel-body { padding: 22px; max-height: 600px; overflow-y: auto; font-family: var(--font-mono); font-size: 14px; line-height: 1.7; color: var(--ai-text); white-space: pre-wrap; }
+
+        /* ── Copy Btn ── */
+        .copy-btn {
+            padding: 6px 14px; border-radius: 4px;
+            border: 1px solid var(--cy-border2);
+            background: transparent; color: var(--ai-text);
+            font-size: 11px; cursor: pointer; transition: all 0.2s ease;
+            font-family: var(--font-display); font-weight: 500;
+        }
+        .copy-btn:hover { border-color: var(--cy-text); background: rgba(255,255,255,0.05); }
+
+        /* ── Toast ── */
+        #ai-toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--cy-surface2);
+            border: 1px solid var(--cy-border2);
+            color: var(--cy-text); padding: 12px 24px; border-radius: 6px;
+            font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+            z-index: 2000; white-space: nowrap; font-weight: 500;
+            font-family: var(--font-display);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #ai-toast.show { opacity: 1; }
+
+        /* ══════════════════════════════════════
+           RESPONSIVO
+           ══════════════════════════════════════ */
+        @media (max-width: 600px) {
+            header { flex-direction: column; align-items: flex-start; }
+            .modal-actions { flex-direction: column-reverse; }
+            .modal-actions.confirm-actions, .modal-actions.info-actions { flex-direction: row; justify-content: flex-end; }
+            .ai-header { flex-direction: column; align-items: flex-start; }
+            .connect-row { flex-direction: column; align-items: stretch; }
+        }
+        @media (min-width: 601px) {
+            .global-actions { width: auto; justify-content: flex-end; }
+            .modal-actions { flex-direction: row; justify-content: flex-end; }
+            .btn-save, .btn-cancel { width: auto; }
+            .connect-row { display: flex; gap: 12px; align-items: flex-end; margin-top: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="mainHeader">
+        <div class="header-left">
+            <div class="logo-hexagon">👁️</div>
+            <div class="header-title">
+                <h1>Crypto Ultravision - Office</h1>
+                <p><span class="status-dot"></span>Diário de Trade</p>
+            </div>
+        </div>
+        <div class="global-actions">
+            <button class="btn-yellow" onclick="abrirPlanilhaFullscreen()">📥 Nova Operação</button>
+            <button class="btn-yellow" id="btnRegistroTrades" onclick="exportarRelatorioTXT()">📝 Relatório de Trades</button>
+            <button class="btn-yellow" onclick="limparTodosDados()">🗑️ Excluir Dados</button>
+        </div>
+    </header>
+
+    <div class="tabs" id="mainTabs">
+        <button class="btn-yellow" onclick="abrirSobreModal()">ℹ️ Sobre o app / Doe</button>
+    </div>
+
+    <main id="dashboard" class="tab-content active">
+        <div class="panel">
+            <div class="panel-header">Métricas de Performance</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Taxa de Acerto</div>
+                    <div class="metric-value" id="dash-winrate">0.00%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Profit Factor</div>
+                    <div class="metric-value" id="dash-profitfactor">0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Total de Trades Fechados</div>
+                    <div class="metric-value" id="dash-totaltrades">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Retorno Líquido</div>
+                    <div class="metric-value" id="dash-return">$0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Média Ganho/Perda</div>
+                    <div class="metric-value" id="dash-avg" style="font-size: 16px;">+$0.00 / -$0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Expectativa</div>
+                    <div class="metric-value" id="dash-expectancy">$0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Maior Drawdown</div>
+                    <div class="metric-value text-red" id="dash-drawdown">-$0.00</div>
+                </div>
+                <div class="metric-card" id="cardRegistroLogs" onclick="abrirGraficosModal()" style="cursor: pointer; border: 1px solid var(--cy-border); background: var(--cy-surface); display: flex; flex-direction: column; justify-content: center; align-items: center; transition: all 0.2s;">
+                    <div class="metric-card" style="color: var(--cy-text); font-weight: 500; border: none; background: transparent; padding: 0; margin-bottom: 5px;">📊</div>
+                    <div class="metric-value" style="font-size: 13px; color: var(--cy-muted); white-space: normal;">Ver Gráficos</div>
+                </div>
+            </div>
+
+            <div class="texto-adicional">📡 Consulte os MultiAgentes de IA, colete dados, simule staking e gere prompts para análises do mercado.</div>
+
+            <div class="buttons-wrapper" style="flex-direction: column; gap: 15px;">
+                <div style="display: flex; gap: 10px; align-items: center; width: 100%; flex-wrap: wrap;">
+                    <select id="cryptoSelect" style="flex: 1; min-width: 200px; padding: 12px; font-size: 14px; background: var(--cy-surface2); border: 1px solid var(--cy-border2); color: var(--cy-text); border-radius: 6px; font-family: var(--font-display); font-weight: 500; outline: none; cursor: pointer;">
+                        <option value="BTC">🅱️️ BTC</option>
+                        <option value="ETH">🔷 ETH</option>
+                        <option value="SOL">⚕️ SOL</option>
+                        <option value="BNB">🔶 BNB</option>
+                        <option value="XRP">✖️ XRP</option>
+                        <option value="XLM">🔘 XLM</option>
+                        <option value="SUI">💧 SUI</option>
+                        <option value="TRX">🛑 TRX</option>
+                        <option value="AVAX">♨️ AVAX</option>
+                        <option value="ADA">🌐 ADA</option>
+                        <option value="BCH">❇️ BCH</option>
+                        <option value="LTC">💠 LTC</option>
+                        <option value="DOGE">🐶 DOGE</option>
+                        <option value="UNI">🦄 UNI</option>
+                        <option value="ORCA">🫍 ORCA</option>
+                        <option value="CAKE">🥞 CAKE</option>
+                        <option value="HYPE">💦 HYPE</option>
+                        <option value="JUP">🪐 JUP</option>
+                        <option value="GRAM">💎 GRAM</option>
+                        <option value="POL">☸️ POL</option>
+                        <option value="PAXG">🪙 PAXG</option>
+                        <option value="XAUT">⚜️ XAUT</option>
+                        <option value="BNSOL">🔶 BNSOL</option>
+                        <option value="WBETH">🔶 WBETH</option>
+                        <option value="DOT">♓ DOT</option>
+                        <option value="ARB">🟦 ARB</option>
+                        <option value="RENDER">🔴 RENDER</option>
+                        <option value="TAO">⚪ TAO</option>
+                        <option value="STAKING_CALC">💰 SIMULAR STAKING</option>
+                    </select>
+                    <button class="btn-yellow" id="btnAbrirAgenteSelector" onclick="const val = document.getElementById('cryptoSelect').value; if(val === 'STAKING_CALC') { abrirCalculadoraStaking(); } else { abrirAgente(val); }" style="padding: 12px 20px; font-size: 14px; min-width: 140px;">  
+🔍 Acessar</button>
+                </div>
+
+                <div id="aiDashboardResultContainer" style="display: none; width: 100%; border: 1px solid var(--cy-border); border-radius: 8px; background: var(--cy-surface2); padding: 18px; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="color: var(--cy-text); font-weight: 600; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.5px;">🧠 Relatório MultiAgentes-IA</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-action" onclick="limparAnaliseIA()" style="padding: 6px 12px; font-size: 16px;" title="Excluir Análise">🗑️</button>
+                            <button class="btn-action" onclick="baixarAiTXT()" style="padding: 6px 12px; font-size: 16px;" title="Baixar TXT">𖨨️</button>
+                        </div>
+                    </div>
+                    <textarea id="aiDashboardResultBox" readonly style="width: 100%; height: 350px; background: var(--cy-bg); border: 1px solid var(--cy-border2); color: var(--cy-text); font-family: var(--font-mono); font-size: 13px; padding: 14px; resize: vertical; line-height: 1.6;"></textarea>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="graficosModal" class="modal-overlay" onclick="if(event.target === this) fecharGraficosModal()">
+        <div class="modal-content" style="max-width: 750px;">
+            <div class="modal-header">
+                <div class="modal-title">📊 Gráficos de Performance</div>
+                <button class="modal-close" onclick="fecharGraficosModal()">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div style="background: var(--cy-surface2); border: 1px solid var(--cy-border); border-radius: 8px; padding: 15px; height: 280px; position: relative;">
+                    <canvas id="chartPnl"></canvas>
+                </div>
+                <div style="background: var(--cy-surface2); border: 1px solid var(--cy-border); border-radius: 8px; padding: 15px; height: 260px; display: flex; justify-content: center; align-items: center; position: relative;">
+                    <canvas id="chartWinRate"></canvas>
+                </div>
+                <div id="tradesTextRecords" style="background: var(--cy-surface2); border: 1px solid var(--cy-border); border-radius: 8px; padding: 15px;">
+                    <h4 style="color: var(--cy-text); margin-bottom: 10px; font-family: var(--font-display); font-size: 14px; text-transform: uppercase;">📝 Registros e Anotações (Journal)</h4>
+                    <textarea id="tradesTextContainer" readonly style="width: 100%; height: 300px; background: #ffffff; border: 1px solid var(--cy-border2); color: #000000; font-family: var(--font-mono); font-size: 13px; padding: 14px; resize: vertical; line-height: 1.6;"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="btn-cancel" onclick="fecharGraficosModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <main id="registro" class="tab-content" style="display: none;">
+        <div class="panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+                <button class="btn-back" onclick="voltarAoDashboard()">⬅ Voltar</button>
+                <div class="panel-header" id="tituloPlanilha" style="margin: 0;">Planilha de Operações</div>
+                
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn-action" id="btnExportarBackup" onclick="exportarBackup(); abrirDoacaoModal();">📤 BACKUP</button>
+                    <button class="btn-action" onclick="document.getElementById('importBackupFile').click(); abrirDoacaoModal();">📥 Importar</button>
+                    <input type="file" id="importBackupFile" style="display:none" accept=".json" onchange="processarImportacao(event)">
+                    
+                    <button class="btn-action" id="btnEditarRegistros" style="display: none;" onclick="habilitarEdicao()">✏️ Editar</button>
+                    <button class="btn-green" id="btnSalvarRegistros" style="display: none; min-width: 100px; padding: 10px 16px; font-size: 13px;" onclick="salvarEdicao()">💾 Salvar</button>
+                    <button class="btn-action" id="btnNovaTradeInterno" onclick="adicionarLinha()">+ Adicionar Linha</button>
+                </div>
+            </div>
+
+            <div id="relatorioContainer" style="display: none; margin-bottom: 20px; border: 1px solid var(--cy-border); border-radius: 8px; background: var(--cy-surface2); padding: 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="color: var(--cy-text); font-weight: 600; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.5px;">📄 Relatório Gerado</span>
+                    <button class="btn-action" onclick="baixarRelatorioTXT()" style="padding: 6px 12px; font-size: 16px;" title="Baixar TXT">🖨️</button>
+                </div>
+                <textarea id="relatorioTXTBox" readonly style="width: 100%; height: 300px; background: var(--cy-bg); border: 1px solid var(--cy-border2); color: var(--cy-text); font-family: var(--font-mono); font-size: 13px; padding: 14px; resize: vertical; line-height: 1.6;"></textarea>
+            </div>
+
+            <div id="searchContainer" class="search-container">
+                <div style="color: var(--cy-text); font-weight: 500; margin-right: 5px; font-size: 13px;">🔍 Filtro:</div>
+                <input type="date" id="inputPesquisaDataPicker" oninput="pesquisarTrade()" title="Selecione uma Data Específica" style="cursor: pointer; flex: 1; min-width: 130px;">
+                <input type="text" id="inputPesquisaTexto" placeholder="00-00-00; 00:00 H" oninput="pesquisarTrade()" style="flex: 2; min-width: 150px;">
+                <button class="btn-cancel" onclick="limparPesquisa()" style="width: auto; padding: 10px 18px;">Limpar</button>
+            </div>
+            
+            <div class="table-container">
+                <table id="tradeTable">
+                    <thead>
+                        <tr class="group-header">
+                            <th colspan="2">Tempo</th>
+                            <th colspan="3">Ativo & Estrutura</th>
+                            <th colspan="5">Preços & Quantidades</th>
+                            <th colspan="5">Resultados (USD)</th>
+                            <th colspan="2">Gestão de Risco</th>
+                            <th colspan="2">Análise & Journal (Clique p/ texto)</th>
+                            <th class="col-delete">🗑️</th>
+                        </tr>
+                        <tr>
+                            <th>Data/Hora Entrada</th>
+                            <th>Data/Hora Saída</th>
+                            <th>Par</th>
+                            <th>Direção</th>
+                            <th>Tipo</th>
+                            <th>Preço Entrada</th>
+                            <th>Preço Saída</th>
+                            <th>Qtd (Moedas)</th>
+                            <th>Total Entrada</th>
+                            <th>Total Saída</th>
+                            <th>Taxas (USD)</th>
+                            <th>P&L Bruto</th>
+                            <th>P&L Líquido</th>
+                            <th>P&L %</th>
+                            <th>Lucro / Perda</th>
+                            <th>Stop Loss</th>
+                            <th>Take Profit</th>
+                            <th>Estratégia</th>
+                            <th>Notas</th>
+                            <th class="col-delete">Excluir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="textModal" class="modal-overlay" onclick="fecharModalClickFora(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Editor de Texto</div>
+                <button class="modal-close" onclick="fecharModal()">&times;</button>
+            </div>
+            <textarea id="modalTextArea" class="modal-textarea" placeholder="Digite suas anotações longas aqui..."></textarea>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="fecharModal()">Voltar</button>
+                <button class="btn-save" id="btnSalvarModal" onclick="salvarModal()">Salvar e Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay" onclick="fecharConfirmacaoClickFora(event)">
+        <div class="modal-content confirm-box" onclick="event.stopPropagation()">
+            <div class="modal-title" id="confirmMessage" style="text-align: center; margin-bottom: 25px; text-transform: none; color: var(--cy-text); font-size: 15px; line-height: 1.6; font-weight: 500;">Tem certeza?</div>
+            <div class="modal-actions confirm-actions" style="justify-content: center; gap: 15px; flex-direction: row;">
+                <button class="btn-cancel" onclick="fecharConfirmacao()" style="flex: 1;">Não</button>
+                <button class="btn-red" id="btnConfirmarSim" onclick="executarConfirmacao()" style="flex: 1; min-width: auto;">Sim</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="warningModal" class="modal-overlay" onclick="fecharWarningClickFora(event)">
+        <div class="modal-content info-box" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">⚠️ ATENÇÃO ⚠️</div>
+                <button class="modal-close" onclick="fecharWarning()">&times;</button>
+            </div>
+            <div style="color: var(--cy-text); line-height: 1.6; margin-bottom: 20px; max-height: 60vh; overflow-y: auto; padding-right: 10px; white-space: pre-wrap; user-select: text; font-size: 14px;">1- Cuide da segurança de sua chave API. Ao usar ela nesta página, tenha ciência que a responsabilidade será sua. Os dados do API serão salvos localmente. Nota de Segurança Importante: nunca salve chaves de API principais (Master) se for rodar o app em navegadores de terceiros ou integrados se não confiar na procedência da hospedagem. Uma API exclusiva de leitura é sempre a melhor prática.
+2- Se apagar os dados do navegador, apagará todos os dados preenchidos no registro de trades; portanto, faça o backup caso precise apagar.
+3- Entenda que IAs podem cometer erros. Não encare as análises como conselhos de investimentos, mas como algo para auxiliar nas suas próprias análises.</div>
+            <div class="modal-actions info-actions">
+                <button class="btn-cancel" onclick="fecharWarning()">Estou Ciente</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sobreModal" class="modal-overlay" onclick="fecharSobreClickFora(event)">
+        <div class="modal-content info-box" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Sobre o app</div>
+                <button class="modal-close" onclick="fecharSobre()">&times;</button>
+            </div>
+            <div style="color: var(--cy-text); line-height: 1.6; margin-bottom: 20px; max-height: 60vh; overflow-y: auto; padding-right: 10px; white-space: pre-wrap; user-select: text; font-size: 14px;">🥷 Crypto Ultravision - Office é exatamente o que separa um trader profissional de uma "sardinha apostadora". O mercado é um ambiente de incerteza, e a única variável que você tem o poder absoluto de controlar é o seu próprio comportamento. Use o Diário de Trade e exerça controle rigoroso de suas operações.
+
+🥷 Consulte os MultiAgentes de IA, colete dados e gere prompts de elite projetados para realizarem análises de forma personalizada para cada criptomoeda. Transforme o caos do mercado em precisão, assumindo o controle de suas operações, fundindo em sua análise a Estatística, Teoria dos Jogos e Dados Forenses. Agora você terá assistentes especializados como auxiliares para lhe ajudar nas tomadas de decisões.
+
+🧠 ARQUITETURA DO PROMPT 🧠
+
+A arquitetura do prompt é estruturada como um sistema multiagente altamente hierarquizado, desenhado para transformar dados brutos do mercado de criptoativos em inteligência estratégica. 
+
+ 📡 DATA COLLECTOR: Responsável por reunir os dados técnicos e onchain necessários antes dos demais agentes atuarem, focando em precisão factual.
+Tarefa Principal: Consolidar métricas como preço, EMAs, RSI, volume, Open Interest (OI), CVD, dados de DEX, fluxo de stablecoins, taxas de rede e Long/Short Ratio.
+
+AGENTES ESPECIALISTAS: Esses agentes realizam a análise individual a partir dos dados coletados pelo Data Collector.
+
+👽 (Analista Técnico - EMAs ): Especialista em *Price Action* focado no alinhamento e comportamento das médias móveis exponenciais (9, 21, 50, 200).
+🐸 Trader Profissional - Price Action: Especialista em anatomia de *candlesticks* e padrões de múltiplos *candles*.
+👾 Analista de Fluxo e Volume: Especialista em Volume e fluxo de ordens, avaliando cenários de acumulação versus distribuição.
+🤖 Analista de Momentum e RSI: Especialista em osciladores de *momentum*, focando em RSI, divergências e análise de ruído versus tendência.
+👹 Especialista em Teoria dos Jogos e Manipulação: Especialista em fluxo institucional, detecção de armadilhas, reflexividade e divergências entre CVD/OI. Este agente possui, inclusive, poder de veto na tomada de decisão.
+
+🔬 SINTETIZADOR: Consolida todas as análises individuais, resolve contradições entre os especialistas, aplica o protocolo de cruzamento de dados e gera o relatório final unificado.
+Tarefa principal: Calcula o "Score de Confluência" (de 0 a 10), que define a confiabilidade da análise baseada na convergência dos indicadores. Ele serve como um "termômetro" de consenso entre os cinco agentes especialistas. O sistema não toma decisões baseadas em um único indicador. O Sintetizador utiliza uma estrutura de "Mesa Redonda" onde os 5 especialistas apresentam suas teses.
+_____________________________________________
+🥷✌️ Gosta do app? Você pode me fazer doações através dos endereços:
+
+🅱️ Bitcoin: bc1qfhdgual87agljceajrgeehgv2krrx0l3du2xyj
+
+🔷 Ethereum:
+0x991E4DDBb285B0d8958f400C5841aF42A8e84047
+
+⚕️ Solana: 
+C1vS8zyc3sZXtr2eH2SFf1SL2izchmZmxMoao5sse5v6
+
+🛑 TRX: 
+TLuuhgK8ReijFe3oqXrYMjBfpbDd1qUNZJ</div>
+            <div class="modal-actions info-actions">
+                <button class="btn-cancel" onclick="fecharSobre()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="doacaoModal" class="modal-overlay" onclick="fecharDoacaoClickFora(event)">
+        <div class="modal-content info-box" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">Apoie o Projeto</div>
+                <button class="modal-close" onclick="fecharDoacao()">&times;</button>
+            </div>
+            <div style="color: var(--cy-text); line-height: 1.6; margin-bottom: 20px; max-height: 60vh; overflow-y: auto; padding-right: 10px; white-space: pre-wrap; user-select: text; font-size: 14px;">🥷✌️ Gosta do app? Você pode me fazer doações através dos endereços:
+
+🅱️ Bitcoin: bc1qfhdgual87agljceajrgeehgv2krrx0l3du2xyj
+
+🔷 Ethereum:
+0x991E4DDBb285B0d8958f400C5841aF42A8e84047
+
+⚕️ Solana: 
+C1vS8zyc3sZXtr2eH2SFf1SL2izchmZmxMoao5sse5v6
+
+🛑 TRX: 
+TLuuhgK8ReijFe3oqXrYMjBfpbDd1qUNZJ</div>
+            <div class="modal-actions info-actions">
+                <button class="btn-cancel" onclick="fecharDoacao()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stakingModal" class="modal-overlay" onclick="if(event.target === this) fecharCalculadoraStaking()">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <div class="modal-title">🧮 Calculadora de Staking</div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btnAtualizarAPY" class="btn-action" onclick="atualizarDadosStaking()" style="padding: 4px 10px; font-size: 12px; background: rgba(16, 185, 129, 0.05); color: var(--cy-green); border-color: var(--cy-green); min-width: 125px;">🔄 Atualizar APY</button>
+                    <button class="modal-close" onclick="fecharCalculadoraStaking()">&times;</button>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <select id="stakingCoinSelect" onchange="selecionarMoedaStaking()" style="margin-bottom: 10px; background: var(--cy-surface2); border: 1px solid var(--cy-border2); color: var(--cy-text); border-radius: 6px; padding: 10px; font-family: var(--font-display); font-size: 14px;">
+                    <option value="ETH">Ethereum (Lido stETH)</option>
+                    <option value="SOL">Solana (Jito SOL)</option>
+                    <option value="ADA">Cardano (ADA)</option>
+                    <option value="DOT">Polkadot (DOT)</option>
+                    <option value="AVAX">Avalanche (Benqi sAVAX)</option>
+                    <option value="BNSOL">Binance SOL (BNSOL)</option>
+                    <option value="WBETH">Binance ETH (WBETH)</option>
+                </select>
+
+                <div style="background: var(--cy-surface2); border: 1px solid var(--cy-border); border-radius: 8px; padding: 15px; height: 250px; position: relative;">
+                    <canvas id="stakingChartCanvas"></canvas>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <div style="color: var(--cy-muted); font-size: 11px; text-transform: uppercase; font-weight: 500;">Saldo Final</div>
+                        <div id="stakingSaldoFinal" style="color: var(--cy-text); font-size: 18px; font-weight: 600; font-family: var(--font-mono);">US$ 0.00</div>
+                        <div id="stakingSaldoFinalCrypto" style="color: var(--cy-neon); font-size: 12px; font-family: var(--font-mono); margin-top: 4px;">≈ 0.0000</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="color: var(--cy-muted); font-size: 11px; text-transform: uppercase; font-weight: 500;">Lucro Total</div>
+                        <div id="stakingLucroTotal" style="color: var(--cy-green); font-size: 18px; font-weight: 600; font-family: var(--font-mono);">US$ 0.00</div>
+                        <div id="stakingLucroTotalCrypto" style="color: var(--cy-green); font-size: 12px; font-family: var(--font-mono); margin-top: 4px; opacity: 0.8;">≈ 0.0000</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; background: var(--cy-surface2); padding: 15px; border-radius: 8px; border: 1px solid var(--cy-border);">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; flex-direction: column;">
+                            <label style="color: var(--cy-text); font-size: 13px; font-weight: 500;">Valor Inicial (US$)</label>
+                            <span id="stakingInitialCrypto" style="color: var(--cy-neon); font-size: 11px; font-family: var(--font-mono); margin-top: 4px;">≈ 0.0000</span>
+                        </div>
+                        <input type="number" id="stakingInitial" value="1000" oninput="calcularStaking()" style="width: 120px; text-align: right; background: var(--cy-bg); border-color: var(--cy-border2);">
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <label style="color: var(--cy-text); font-size: 13px; font-weight: 500;">APY (%)</label>
+                        <div style="display: flex; align-items: center; width: 60%; justify-content: flex-end;">
+                            <input type="number" id="stakingApy" value="5" step="0.1" oninput="calcularStaking()" style="width: 100px; text-align: right; background: var(--cy-bg); border-color: var(--cy-border2);">
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <label style="color: var(--cy-text); font-size: 13px; font-weight: 500;">Período (Anos)</label>
+                        <div style="display: flex; align-items: center; gap: 10px; width: 60%;">
+                            <input type="range" id="stakingYearsSlider" min="0.5" max="10" step="0.5" value="1" oninput="document.getElementById('stakingYears').value = this.value; calcularStaking()" style="flex: 1;">
+                            <input type="number" id="stakingYears" value="1" step="0.5" oninput="document.getElementById('stakingYearsSlider').value = this.value; calcularStaking()" style="width: 70px; text-align: right; background: var(--cy-bg); border-color: var(--cy-border2);">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main id="ai-view" class="tab-content" style="display: none;">
+        <div class="ai-app">
+            
+            <header class="ai-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button class="btn-back" onclick="fecharAgente()" style="margin-right: 10px;">⬅ Voltar</button>
+                    <div class="ai-logo-block">
+                        <div class="ai-hex" id="ai-icon">🅱️</div>
+                        <div class="ai-logo-text">
+                            <h1 id="ai-title">BITCOIN</h1>
+                            <p>IA Multi Agentes</p>
+                            <p id="agentYieldInfo" style="display:none; font-family: var(--font-mono); font-size: 11px; margin-top: 4px; color: var(--cy-muted);"><span id="agentYieldLabel"></span> <span id="agentYieldValue" style="color: var(--cy-text); font-weight: bold;">Carregando...</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="ai-header-status">
+                    <div class="ai-status-dot" id="statusDot"></div>
+                    <span id="statusText">Desconectado</span>
+                </div>
+            </header>
+
+            <div class="config-panel">
+                <h2>Configuração da API</h2>
+                <div class="provider-toggle">
+                    <select id="apiProviderSelect" onchange="setProvider(this.value)">
+                        <option value="">Escolha API</option>
+                        <option value="grok">Grok 4.3</option>
+                        <option value="gemini">Gemini 3.5 flash</option>
+                    </select>
+                </div>
+
+                <div class="connect-row">
+                    <div class="ai-field-group">
+                        <label>Chave da API</label>
+                        <input type="password" id="apiKeyInput" placeholder="Cole sua chave aqui..." oninput="onApiInput(this.value)">
+                    </div>
+                    <button class="ai-btn ai-btn-theme" id="btnConnect" onclick="connectApi()" disabled>Conectar</button>
+                </div>
+
+                <div class="ai-input-row" style="margin-top:12px;">
+                    <div class="ai-field-group">
+                        <label>Token Bot Telegram (Opcional)</label>
+                        <input type="password" id="tgTokenInput" placeholder="...">
+                    </div>
+                    <div class="ai-field-group">
+                        <label>Chat ID Telegram (Opcional)</label>
+                        <input type="text" id="tgChatInput" placeholder="@...">
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;align-items:center;">
+                    <button class="ai-btn ai-btn-ghost" onclick="resetApp()">Limpar API</button>
+                    <button class="ai-btn ai-btn-outline" style="padding: 8px 16px;" onclick="saveCredentials()">Salvar Dados</button>
+                </div>
+            </div>
+
+            <div class="result-panel" id="resultPanel">
+                <div class="result-panel-header">
+                    <h3>🔮 Relatório Multiagente</h3>
+                    <div style="display:flex;gap:8px;">
+                        <button class="copy-btn" onclick="copyResult()">Copiar</button>
+                        <button class="copy-btn" onclick="document.getElementById('resultPanel').classList.remove('visible')">Fechar</button>
+                    </div>
+                </div>
+                <div class="result-panel-body" id="resultBody">Aguardando análise...</div>
+            </div>
+
+            <div class="action-bar-container">
+                <div id="stakingWarningBox" onclick="abrirCalculadoraStaking()" style="display:none; cursor: pointer; background: rgba(245, 158, 11, 0.1); border: 1px solid var(--cy-yellow); color: var(--cy-yellow); padding: 16px; border-radius: 8px; margin-bottom: 24px; text-align: center; font-weight: bold; font-family: var(--font-display);">
+                    Vá para a opção Simular Staking. (Clique aqui)
+                </div>
+                <div class="action-bar">
+                    <div class="action-card" id="cardColetar" onclick="collectData()">
+                        <div class="action-icon">📡</div>
+                        <div class="action-label" id="labelColetar">Data Collector</div>
+                        <div class="action-sub">Pesquisar Dados</div>
+                    </div>
+                    <div class="action-card disabled" id="cardAnalise" onclick="runAnalysis()">
+                        <div class="action-icon">🧠</div>
+                        <div class="action-label" id="labelAnalise">Consultar MultiAgentes -IA </div>
+                        <div class="action-sub">👽🐸👾🤖👹</div>
+                    </div>
+                    <div class="action-card" id="cardPrompt" onclick="generatePromptFile()">
+                        <div class="action-icon">📃</div>
+                        <div class="action-label" id="labelPrompt">👽🐸👾🤖👹</div>
+                        <div class="action-sub">Exportar Prompt</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-section" id="onchainSection" style="display:none;">
+                <div class="section-title" id="onchainSectionTitle">📊 Dados On-Chain — BITCOIN</div>
+                <div class="data-grid">
+                    <div class="data-card">
+                        <div class="dc-label">Volume 24h (CEX)</div>
+                        <div class="dc-value" id="dex24h">—</div>
+                        <div class="dc-sub" id="dex24hSub">Binance</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="dc-label">TVL DeFi</div>
+                        <div class="dc-value theme" id="tvl">—</div>
+                        <div class="dc-sub">Total Value Locked</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="dc-label">Stablecoins</div>
+                        <div class="dc-value" id="stablecoins">—</div>
+                        <div class="dc-sub" id="stablecoinFlow">—</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="dc-label">Fees de Rede 24h</div>
+                        <div class="dc-value" id="fees">—</div>
+                        <div class="dc-sub" id="feesStatus">—</div>
+                    </div>
+                    <div class="data-card" id="stakingYieldCard" style="display:none;">
+                        <div class="dc-label">Rendimento (APR)</div>
+                        <div class="dc-value theme" id="stakingYield">—</div>
+                        <div class="dc-sub">Staking</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-section" id="marketSection" style="display:none;">
+                <div class="section-title">📈 Mercado — Binance Futures</div>
+                <div class="data-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                    <div class="data-card">
+                        <div class="dc-label">Open Interest</div>
+                        <div class="dc-value" id="oi">—</div>
+                        <div class="dc-sub" id="oiSub">Perp</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="dc-label">CVD (100min)</div>
+                        <div class="dc-value" id="cvd">—</div>
+                        <div class="dc-sub">Buy − Sell Vol</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="dc-label">L/S Top Traders</div>
+                        <div class="dc-value" id="lsRatio">—</div>
+                        <div class="dc-sub" id="lsSplit">—</div>
+                    </div>
+                    <div class="data-card">
+                        <div class="dc-label">Book Topo</div>
+                        <div class="dc-value" id="bookBid" style="font-size:14px;">—</div>
+                        <div class="dc-sub" id="bookAsk">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-section" id="tfSection" style="display:none;">
+                <div class="section-title">🌐 Análise Técnica Multitimeframe</div>
+                <div style="overflow-x:auto;">
+                    <table class="tf-table">
+                        <thead>
+                            <tr>
+                                <th>TF</th>
+                                <th>Preço</th>
+                                <th>RSI(14)</th>
+                                <th>BB Baixo</th>
+                                <th>BB Meio</th>
+                                <th>BB Alto</th>
+                                <th>EMA9</th>
+                                <th>EMA21</th>
+                                <th>EMA50</th>
+                                <th>EMA200</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tfTableBody">
+                            <tr><td colspan="10" style="text-align:center;color:var(--ai-muted);padding:20px;">Coletando dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="raw-panel" id="rawPanel" style="display:none;">
+                <div class="raw-panel-header">
+                    <span>📄 Dados Brutos Coletados</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="copy-btn" onclick="copyRaw()">Copiar</button>
+                        <button class="copy-btn" onclick="downloadRaw()">↓ TXT</button>
+                    </div>
+                </div>
+                <div class="raw-panel-body" id="rawBody"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="ai-toast"></div>
+
+    <script>
+        // =========================================================================
+        // JAVASCRIPT: DASHBOARD e PLANILHA.
+        // =========================================================================
+
+        let apyData = {
+            ETH: 3.2,
+            SOL: 7.1,
+            ADA: 2.8,
+            DOT: 11.5,
+            AVAX: 8.2,
+            BNSOL: 6.5,
+            WBETH: 3.0
+        };
+        
+        let stakingCryptoPrices = {
+            ETH: 1,
+            SOL: 1,
+            ADA: 1,
+            DOT: 1,
+            AVAX: 1,
+            BNSOL: 1,
+            WBETH: 1
+        };
+
+        function formatarPar(input) {
+            if (!input.value) return;
+            let val = input.value.trim().toUpperCase();
+            let coin = val.split('/')[0];
+            
+            if (coin.endsWith('USD')) coin = coin.slice(0, -4);
+            else if (coin.endsWith('USD')) coin = coin.slice(0, -3);
+            
+            if (coin) {
+                input.value = coin + '/USD';
+            }
+        }
+
+        let globalYields = { BNSOL: '≈ 6.50%', WBETH: '≈ 3.00%' };
+
+        async function fetchStakingPrices() {
+            try {
+                const res = await fetch('https://api.binance.com/api/v3/ticker/price');
+                const data = await res.json();
+                data.forEach(t => {
+                    if (t.symbol === 'ETHUSDT') stakingCryptoPrices.ETH = parseFloat(t.price);
+                    if (t.symbol === 'SOLUSDT') stakingCryptoPrices.SOL = parseFloat(t.price);
+                    if (t.symbol === 'ADAUSDT') stakingCryptoPrices.ADA = parseFloat(t.price);
+                    if (t.symbol === 'DOTUSDT') stakingCryptoPrices.DOT = parseFloat(t.price);
+                    if (t.symbol === 'AVAXUSDT') stakingCryptoPrices.AVAX = parseFloat(t.price);
+                    if (t.symbol === 'BNSOLUSDT') stakingCryptoPrices.BNSOL = parseFloat(t.price);
+                    if (t.symbol === 'WBETHUSDT') stakingCryptoPrices.WBETH = parseFloat(t.price);
+                });
+            } catch (e) {
+                console.error("Erro ao buscar preços para a calculadora", e);
+            }
+        }
+
+        async function fetchGlobalYields() {
+            try {
+                const rYield = await fetch('https://yields.llama.fi/pools');
+                if (rYield.ok) {
+                    const dYield = await rYield.json();
+                    
+                    const poolBNSOL = dYield.data.find(p => p.symbol.toUpperCase() === 'BNSOL' && p.project.includes('binance'));
+                    if(poolBNSOL && poolBNSOL.apy) { 
+                        globalYields.BNSOL = poolBNSOL.apy.toFixed(2) + '%'; 
+                        apyData.BNSOL = poolBNSOL.apy; 
+                    }
+                    
+                    const poolWBETH = dYield.data.find(p => p.symbol.toUpperCase() === 'WBETH' && p.project.includes('binance'));
+                    if(poolWBETH && poolWBETH.apy) { 
+                        globalYields.WBETH = poolWBETH.apy.toFixed(2) + '%'; 
+                        apyData.WBETH = poolWBETH.apy; 
+                    }
+
+                    const poolETH = dYield.data.find(p => p.symbol.toUpperCase() === 'STETH' && p.project === 'lido');
+                    if(poolETH && poolETH.apy) apyData.ETH = poolETH.apy;
+
+                    const poolSOL = dYield.data.find(p => p.symbol.toUpperCase() === 'JITOSOL');
+                    if(poolSOL && poolSOL.apy) apyData.SOL = poolSOL.apy;
+
+                    const poolAVAX = dYield.data.find(p => p.symbol.toUpperCase() === 'SAVAX' && p.project === 'benqi-staked-avax');
+                    if(poolAVAX && poolAVAX.apy) apyData.AVAX = poolAVAX.apy;
+                }
+            } catch (e) {
+                globalYields.BNSOL = 'Erro';
+                globalYields.WBETH = 'Erro';
+            }
+            
+            if (currentCrypto.symbol === 'BNSOLUSDT' && document.getElementById('agentYieldValue')) {
+                document.getElementById('agentYieldValue').textContent = globalYields.BNSOL;
+            } else if (currentCrypto.symbol === 'WBETHUSDT' && document.getElementById('agentYieldValue')) {
+                document.getElementById('agentYieldValue').textContent = globalYields.WBETH;
+            }
+
+            if (document.getElementById('stakingModal') && document.getElementById('stakingModal').classList.contains('active')) {
+                selecionarMoedaStaking();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // MOSTRAR AVISO SEMPRE QUE ABRIR A PÁGINA
+            document.getElementById('warningModal').classList.add('active');
+
+            configurarModoPrincipal();
+            
+            fetchGlobalYields();
+            fetchStakingPrices();
+            
+            const relatorioSalvo = localStorage.getItem('cryptoRelatorioTXT');
+            if (relatorioSalvo) {
+                document.getElementById('relatorioTXTBox').value = relatorioSalvo;
+                document.getElementById('relatorioContainer').style.display = 'block';
+            }
+
+            const ultimaAnalise = localStorage.getItem('cryptoUltimaAnaliseIA');
+            if (ultimaAnalise) {
+                document.getElementById('aiDashboardResultBox').value = ultimaAnalise;
+                document.getElementById('aiDashboardResultContainer').style.display = 'block';
+            }
+        });
+
+        let modoApenasLeitura = false;
+
+        function abrirRegistrosFullscreen() {
+            const dados = localStorage.getItem('cryptoTradesData');
+            let temRegistros = false;
+            if (dados) {
+                try {
+                    const trades = JSON.parse(dados);
+                    if (Array.isArray(trades)) { temRegistros = trades.length > 0 && trades.some(t => t.par && t.par.trim() !== ''); }
+                } catch(e) {}
+            }
+
+            if (!temRegistros) { alert("Sem registros."); return; }
+            modoApenasLeitura = true;
+            configurarModoJanela('Histórico de Registros', false);
+        }
+
+        function abrirPlanilhaFullscreen() {
+            modoApenasLeitura = false;
+            configurarModoJanela('Adicionar Operação', true);
+        }
+
+        function voltarAoDashboard() {
+            configurarModoPrincipal();
+        }
+
+        function configurarModoJanela(titulo, editavel) {
+            document.getElementById('mainHeader').style.display = 'none';
+            document.getElementById('mainTabs').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('ai-view').style.display = 'none';
+            
+            document.getElementById('registro').style.display = 'block';
+            document.getElementById('registro').classList.add('active');
+            document.getElementById('tituloPlanilha').innerText = titulo;
+            window.scrollTo(0, 0);
+
+            const btnEdit = document.getElementById('btnEditarRegistros');
+            const btnSave = document.getElementById('btnSalvarRegistros');
+
+            if (editavel) {
+                document.getElementById('btnNovaTradeInterno').style.display = 'inline-block';
+                if (btnEdit) btnEdit.style.display = 'none';
+                if (btnSave) btnSave.style.display = 'inline-block';
+                document.querySelectorAll('.col-delete').forEach(el => el.style.display = '');
+                document.getElementById('searchContainer').style.display = 'none';
+            } else {
+                document.getElementById('btnNovaTradeInterno').style.display = 'none';
+                if (btnEdit) btnEdit.style.display = 'inline-block';
+                if (btnSave) btnSave.style.display = 'none';
+                document.getElementById('searchContainer').style.display = 'flex';
+            }
+
+            limparPesquisa();
+            carregarDados();
+            if (editavel && document.querySelectorAll('.trade-row').length === 0) { adicionarLinha(); }
+            if (!editavel) { desabilitarEdicao(); }
+        }
+
+        function configurarModoPrincipal() {
+            document.getElementById('mainHeader').style.display = 'flex';
+            document.getElementById('mainTabs').style.display = 'flex';
+            document.getElementById('registro').style.display = 'none';
+            document.getElementById('ai-view').style.display = 'none';
+            
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('dashboard').classList.add('active');
+            
+            carregarDados();
+            atualizarDashboard();
+            window.scrollTo(0, 0);
+        }
+
+        function desabilitarEdicao() {
+            document.querySelectorAll('.col-delete').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.btn-delete').forEach(el => el.closest('td').style.display = 'none');
+            document.querySelectorAll('#tradeTable input, #tradeTable select, #tradeTable textarea').forEach(el => {
+                el.setAttribute('readonly', 'true');
+                if (el.tagName === 'SELECT') el.setAttribute('disabled', 'true');
+                if (el.tagName === 'TEXTAREA') el.classList.add('disabled-mode');
+            });
+        }
+
+        function pesquisarTrade() {
+            const dataPickerVal = document.getElementById('inputPesquisaDataPicker').value;
+            const textVal = document.getElementById('inputPesquisaTexto').value.toLowerCase().trim();
+            const termoText = textVal.replace(/[\s,t]/g, '');
+
+            const linhas = document.querySelectorAll('#tradeTable tbody tr');
+            linhas.forEach(linha => {
+                const dtEnt = linha.querySelector('.in-dtEnt').value || '';
+                const dtSai = linha.querySelector('.in-dtSai').value || '';
+                let matchDataPicker = true; let matchText = true;
+
+                if (dataPickerVal) { matchDataPicker = dtEnt.startsWith(dataPickerVal) || dtSai.startsWith(dataPickerVal); }
+                if (termoText) {
+                    const preparar = (val) => {
+                        if (!val) return ''; const [data, hora] = val.split('T'); if (!data) return val;
+                        const [a, m, d] = data.split('-');
+                        return `${d}/${m}/${a}${hora}${a}-${m}-${d}${hora}${d}-${m}-${a}${hora}${val}`.toLowerCase().replace(/[\s,t]/g, '');
+                    };
+                    matchText = preparar(dtEnt).includes(termoText) || preparar(dtSai).includes(termoText);
+                }
+                linha.style.display = (matchDataPicker && matchText) ? '' : 'none';
+            });
+        }
+
+        function limparPesquisa() {
+            document.getElementById('inputPesquisaDataPicker').value = '';
+            document.getElementById('inputPesquisaTexto').value = '';
+            pesquisarTrade();
+        }
+
+        function fecharWarning() { document.getElementById('warningModal').classList.remove('active'); }
+        function fecharWarningClickFora(e) { if(e.target === document.getElementById('warningModal')) fecharWarning(); }
+
+        function abrirSobreModal() { document.getElementById('sobreModal').classList.add('active'); }
+        function fecharSobre() { document.getElementById('sobreModal').classList.remove('active'); }
+        function fecharSobreClickFora(e) { if(e.target === document.getElementById('sobreModal')) fecharSobre(); }
+
+        function abrirDoacaoModal() { 
+            document.getElementById('doacaoModal').classList.add('active'); 
+            const btnExp = document.getElementById('btnExportarBackup');
+            if(btnExp) btnExp.classList.remove('btn-glow-white');
+        }
+        function fecharDoacao() { document.getElementById('doacaoModal').classList.remove('active'); }
+        function fecharDoacaoClickFora(e) { if(e.target === document.getElementById('doacaoModal')) fecharDoacao(); }
+
+        let acaoConfirmacao = null;
+        function mostrarConfirmacao(mensagem, callback) { document.getElementById('confirmMessage').innerText = mensagem; acaoConfirmacao = callback; document.getElementById('confirmModal').classList.add('active'); }
+        function fecharConfirmacao() { document.getElementById('confirmModal').classList.remove('active'); acaoConfirmacao = null; }
+        function fecharConfirmacaoClickFora(e) { if(e.target === document.getElementById('confirmModal')) fecharConfirmacao(); }
+        function executarConfirmacao() { if (acaoConfirmacao) acaoConfirmacao(); fecharConfirmacao(); }
+
+        const escapeHTML = (str) => str ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+
+        function adicionarLinha(dados = null, isLoading = false) {
+            const tbody = document.getElementById('tableBody');
+            const tr = document.createElement('tr');
+            tr.className = 'trade-row';
+            const d = dados || { dtEnt: '', dtSai: '', par: '', dir: 'Long', tipo: 'Day Trade', pEnt: '', pSai: '', qtd: '', taxa: '', sl: '', tp: '', setup: '', notas: '' };
+
+            tr.innerHTML = `
+                <td><input type="datetime-local" class="in-dtEnt" value="${d.dtEnt || ''}" onchange="processarAlteracao()"></td>
+                <td><input type="datetime-local" class="in-dtSai" value="${d.dtSai || ''}" onchange="processarAlteracao()"></td>
+                <td><input type="text" class="in-par" placeholder="???/USD" value="${d.par || ''}" oninput="processarAlteracao()" onblur="formatarPar(this); processarAlteracao()"></td>
+                <td><select class="in-dir" onchange="processarAlteracao()"><option value="Long" ${d.dir=='Long'?'selected':''}>Long</option><option value="Short" ${d.dir=='Short'?'selected':''}>Short</option></select></td>
+                <td><select class="in-tipo" onchange="processarAlteracao()"><option ${d.tipo=='Day Trade'?'selected':''}>Day Trade</option><option ${d.tipo=='Scalp'?'selected':''}>Scalp</option><option ${d.tipo=='Swing'?'selected':''}>Swing</option><option ${d.tipo=='Spot'?'selected':''}>Spot</option></select></td>
+                <td><input type="number" class="in-pent" value="${d.pEnt || ''}" oninput="processarAlteracao()"></td>
+                <td><input type="number" class="in-psai" value="${d.pSai || ''}" oninput="processarAlteracao()"></td>
+                <td><input type="number" class="in-qtd" value="${d.qtd || ''}" oninput="processarAlteracao()"></td>
+                <td><input type="text" class="out-totent" readonly></td>
+                <td><input type="text" class="out-totsai" readonly></td>
+                <td><input type="number" class="in-taxa" value="${d.taxa || ''}" oninput="processarAlteracao()"></td>
+                <td><input type="text" class="out-pnlbruto" readonly></td>
+                <td><input type="text" class="out-pnlliq" readonly></td>
+                <td><input type="text" class="out-pnlperc" readonly></td>
+                <td><select class="out-res" disabled><option value="Aberto">Aberto</option><option value="Lucro">Lucro</option><option value="Perda">Perda</option><option value="Empate">Empate</option></select></td>
+                <td><input type="number" class="in-sl" value="${d.sl || ''}" oninput="processarAlteracao()"></td>
+                <td><input type="number" class="in-tp" value="${d.tp || ''}" oninput="processarAlteracao()"></td>
+                <td><textarea class="in-setup journal-input" readonly onclick="abrirEditorModal(this, 'Estratégia / Setup')" placeholder="Escrever...">${escapeHTML(d.setup)}</textarea></td>
+                <td><textarea class="in-notas journal-input" readonly onclick="abrirEditorModal(this, 'Lições e Notas')" placeholder="Escrever...">${escapeHTML(d.notas)}</textarea></td>
+                <td style="text-align:center;" class="col-delete-cell"><button class="btn-delete" onclick="removerLinha(this)">×</button></td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+            calcularLinha(tr);
+            
+            if (!isLoading) {
+                document.getElementById('btnRegistroTrades').classList.add('btn-glow-white');
+            }
+        }
+
+        function removerLinha(btn) { mostrarConfirmacao("Deseja excluir esta operação?", () => { btn.closest('tr').remove(); processarAlteracao(); }); }
+
+        let campoEditando = null;
+        function abrirEditorModal(elemento, titulo) {
+            campoEditando = elemento; document.getElementById('modalTitle').innerText = titulo;
+            const textArea = document.getElementById('modalTextArea'); textArea.value = elemento.value;
+            if (modoApenasLeitura) { textArea.setAttribute('readonly', 'true'); document.getElementById('btnSalvarModal').style.display = 'none'; } 
+            else { textArea.removeAttribute('readonly'); document.getElementById('btnSalvarModal').style.display = 'block'; }
+            document.getElementById('textModal').classList.add('active');
+            if(!modoApenasLeitura) setTimeout(() => { textArea.focus(); textArea.selectionStart = textArea.selectionEnd = textArea.value.length; }, 100);
+        }
+
+        function fecharModal() { document.getElementById('textModal').classList.remove('active'); campoEditando = null; }
+        function fecharModalClickFora(e) { if(e.target === document.getElementById('textModal')) fecharModal(); }
+        function salvarModal() { if (campoEditando && !modoApenasLeitura) { campoEditando.value = document.getElementById('modalTextArea').value; processarAlteracao(); } fecharModal(); }
+
+        function exportarRelatorioTXT() {
+            document.getElementById('btnRegistroTrades').classList.remove('btn-glow-white');
+            
+            atualizarDashboard();
+            
+            const dados = localStorage.getItem('cryptoTradesData'); let trades = [];
+            try { trades = dados ? JSON.parse(dados) : []; if (!Array.isArray(trades)) trades = []; } catch(e) {}
+            if (!trades.some(t => t.par && t.par.trim() !== '')) { alert("Sem registros."); return; }
+
+            let t = "=================================================\n          RELATÓRIO DE TRADING (CRYPTO)          \n=================================================\n\n";
+            t += `[ RESUMO DE PERFORMANCE ]\n- Win Rate: ${document.getElementById('dash-winrate').innerText}\n- Profit Factor: ${document.getElementById('dash-profitfactor').innerText}\n- Trades Fechadas: ${document.getElementById('dash-totaltrades').innerText}\n- Retorno Total: ${document.getElementById('dash-return').innerText}\n- Média Ganho/Perda: ${document.getElementById('dash-avg').innerText}\n- Expectancy: ${document.getElementById('dash-expectancy').innerText}\n- Drawdown: ${document.getElementById('dash-drawdown').innerText}\n\n-------------------------------------------------\n\n`;
+            
+            trades.forEach((trade, idx) => {
+                if (!trade.par || trade.par.trim() === '') return;
+                
+                let isComplete = (
+                    trade.dtEnt !== '' && trade.dtSai !== '' && 
+                    trade.par !== '' && trade.dir !== '' && trade.tipo !== '' && 
+                    trade.pEnt !== '' && trade.pSai !== '' && trade.qtd !== '' && 
+                    trade.taxa !== '' && trade.sl !== '' && trade.tp !== '' && 
+                    trade.setup !== '' && trade.notas !== ''
+                );
+                let preenchimento = isComplete ? '✅ Completo' : '⚠️ Incompleto';
+
+                let pEnt = parseFloat(trade.pEnt) || 0;
+                let pSai = parseFloat(trade.pSai) || 0;
+                let qtd = parseFloat(trade.qtd) || 0;
+                let taxa = parseFloat(trade.taxa) || 0;
+                let dir = trade.dir;
+
+                let pnlBrutoText = '-';
+                let pnlLiqText = '-';
+                let pnlPercText = '-';
+                let resText = 'Aberto';
+
+                if (pEnt > 0 && qtd > 0 && pSai > 0) {
+                    let totEnt = pEnt * qtd;
+                    let totSai = pSai * qtd;
+                    let pnlBruto = dir === 'Long' ? (totSai - totEnt) : (totEnt - totSai);
+                    let pnlLiq = pnlBruto - taxa;
+                    let pnlPerc = (pnlBruto / totEnt) * 100;
+
+                    pnlBrutoText = (pnlBruto >= 0 ? '+$' : '-$') + Math.abs(pnlBruto).toFixed(2);
+                    pnlLiqText = (pnlLiq >= 0 ? '+$' : '-$') + Math.abs(pnlLiq).toFixed(2);
+                    pnlPercText = (pnlPerc >= 0 ? '+' : '') + pnlPerc.toFixed(2) + '%';
+                    resText = pnlLiq > 0 ? '✅ Lucro' : (pnlLiq < 0 ? '❌ Perda' : '➖ Empate');
+                }
+
+                t += `>>> Trade #${idx + 1} | ${trade.par} (${trade.dir}) <<<\nStatus da Planilha: ${preenchimento}\nEntrada: ${(trade.dtEnt || 'N/D').replace('T', ' ')} - Preço: $${trade.pEnt || '-'}\nSaída: ${(trade.dtSai || 'N/D').replace('T', ' ')} - Preço: $${trade.pSai || '-'}\nPerformance: ${resText} | P&L Bruto: ${pnlBrutoText} | P&L Líquido: ${pnlLiqText} | P&L %: ${pnlPercText}\n[Estratégia]:\n${trade.setup || 'Sem anotação'}\n\n[Lições]:\n${trade.notas || 'Sem anotação'}\n.................................................\n\n`;
+            });
+            
+            localStorage.setItem('cryptoRelatorioTXT', t);
+            document.getElementById('relatorioTXTBox').value = t;
+            document.getElementById('relatorioContainer').style.display = 'block';
+            
+            abrirRegistrosFullscreen();
+        }
+
+        function baixarRelatorioTXT() {
+            const texto = document.getElementById('relatorioTXTBox').value;
+            if (!texto || texto.trim() === '') {
+                alert("Não há relatório gerado para baixar.");
+                return;
+            }
+            const dataStr = new Date().toISOString().slice(0, 10);
+            const nomeArquivo = `Relatorio_Operacoes_${dataStr}.txt`;
+            const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = nomeArquivo;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        let chartPnl = null;
+        let chartWinRate = null;
+
+        function abrirGraficosModal() {
+            document.getElementById('graficosModal').classList.add('active');
+            renderizarGraficos();
+        }
+
+        function fecharGraficosModal() {
+            document.getElementById('graficosModal').classList.remove('active');
+        }
+
+        function renderizarGraficos() {
+            const dadosSalvos = localStorage.getItem('cryptoTradesData');
+            let trades = [];
+            try { trades = dadosSalvos ? JSON.parse(dadosSalvos) : []; if (!Array.isArray(trades)) trades = []; } catch(e) {}
+
+            let tradesFechados = trades.filter(t => t.pEnt > 0 && t.pSai > 0 && t.qtd > 0);
+            tradesFechados = tradesFechados.reverse();
+
+            let ganhos = 0;
+            let perdas = 0;
+            let empates = 0;
+            let labelsPnl = ['Início'];
+            let dataPnl = [0];
+            let pnlAcumulado = 0;
+
+            tradesFechados.forEach((t, i) => {
+                let liq = (t.dir === 'Long' ? (t.pSai*t.qtd - t.pEnt*t.qtd) : (t.pEnt*t.qtd - t.pSai*t.qtd)) - (parseFloat(t.taxa)||0);
+                pnlAcumulado += liq;
+                labelsPnl.push('T' + (i+1));
+                dataPnl.push(pnlAcumulado);
+
+                if (liq > 0) ganhos++;
+                else if (liq < 0) perdas++;
+                else empates++;
+            });
+
+            Chart.defaults.color = '#8e8e93';
+            Chart.defaults.font.family = "'Inter', sans-serif";
+
+            const ctxPnl = document.getElementById('chartPnl').getContext('2d');
+            if (chartPnl) chartPnl.destroy();
+            chartPnl = new Chart(ctxPnl, {
+                type: 'line',
+                data: {
+                    labels: labelsPnl,
+                    datasets: [{
+                        label: 'Curva de Patrimônio (USD Líquido)',
+                        data: dataPnl,
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.15)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.2,
+                        pointBackgroundColor: '#d4af37',
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#f5f5f7' } }
+                    },
+                    scales: {
+                        y: { grid: { color: '#2a2a2e' }, ticks: { color: '#f5f5f7' } },
+                        x: { grid: { display: false }, ticks: { color: '#8e8e93' } }
+                    }
+                }
+            });
+
+            const ctxWinRate = document.getElementById('chartWinRate').getContext('2d');
+            if (chartWinRate) chartWinRate.destroy();
+            chartWinRate = new Chart(ctxWinRate, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ganhos', 'Perdas', 'Empates'],
+                    datasets: [{
+                        data: [ganhos, perdas, empates],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#f5f5f7' } }
+                    }
+                }
+            });
+            
+            const tradesTextContainer = document.getElementById('tradesTextContainer');
+            tradesTextContainer.value = '';
+            if (trades.length > 0) {
+                let journalText = '';
+                trades.forEach((t, idx) => {
+                    let isComplete = (
+                        t.dtEnt !== '' && t.dtSai !== '' && 
+                        t.par !== '' && t.dir !== '' && t.tipo !== '' && 
+                        t.pEnt !== '' && t.pSai !== '' && t.qtd !== '' && 
+                        t.taxa !== '' && t.sl !== '' && t.tp !== '' && 
+                        t.setup !== '' && t.notas !== ''
+                    );
+                    let preenchimento = isComplete ? '✅ Completo' : '⚠️ Incompleto';
+
+                    let pEnt = parseFloat(t.pEnt) || 0;
+                    let pSai = parseFloat(t.pSai) || 0;
+                    let qtd = parseFloat(t.qtd) || 0;
+                    let taxa = parseFloat(t.taxa) || 0;
+                    let dir = t.dir;
+
+                    let pnlBrutoText = '-';
+                    let pnlLiqText = '-';
+                    let pnlPercText = '-';
+                    let resText = 'Aberto';
+
+                    if (pEnt > 0 && qtd > 0 && pSai > 0) {
+                        let totEnt = pEnt * qtd;
+                        let totSai = pSai * qtd;
+                        let pnlBruto = dir === 'Long' ? (totSai - totEnt) : (totEnt - totSai);
+                        let pnlLiq = pnlBruto - taxa;
+                        let pnlPerc = (pnlBruto / totEnt) * 100;
+
+                        pnlBrutoText = (pnlBruto >= 0 ? '+$' : '-$') + Math.abs(pnlBruto).toFixed(2);
+                        pnlLiqText = (pnlLiq >= 0 ? '+$' : '-$') + Math.abs(pnlLiq).toFixed(2);
+                        pnlPercText = (pnlPerc >= 0 ? '+' : '') + pnlPerc.toFixed(2) + '%';
+                        resText = pnlLiq > 0 ? '✅ Lucro' : (pnlLiq < 0 ? '❌ Perda' : '➖ Empate');
+                    }
+
+                    journalText += `>>> Trade #${trades.length - idx} | ${t.par} (${t.dir}) <<<\nStatus da Planilha: ${preenchimento}\nEntrada: ${(t.dtEnt || 'N/D').replace('T', ' ')} - Preço: $${t.pEnt || '-'}\nSaída: ${(t.dtSai || 'N/D').replace('T', ' ')} - Preço: $${t.pSai || '-'}\nPerformance: ${resText} | P&L Bruto: ${pnlBrutoText} | P&L Líquido: ${pnlLiqText} | P&L %: ${pnlPercText}\n[Estratégia]:\n${t.setup || 'Sem anotação'}\n\n[Lições]:\n${t.notas || 'Sem anotação'}\n.................................................\n\n`;
+                });
+                tradesTextContainer.value = journalText.trim() !== '' ? journalText.trim() : 'Nenhuma anotação encontrada nos registros.';
+            } else {
+                tradesTextContainer.value = 'Sem registros para exibir.';
+            }
+        }
+
+        function baixarAiTXT() {
+            const texto = document.getElementById('aiDashboardResultBox').value;
+            if (!texto || texto.trim() === '') {
+                alert("Não há análise gerada para baixar.");
+                return;
+            }
+            const dataStr = new Date().toISOString().slice(0, 10);
+            const nomeArquivo = `Analise_IA_${dataStr}.txt`;
+            const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = nomeArquivo;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        function limparAnaliseIA() {
+            mostrarConfirmacao("Deseja apagar o registro da Última Análise IA gerada?", () => {
+                localStorage.removeItem('cryptoUltimaAnaliseIA');
+                document.getElementById('aiDashboardResultBox').value = '';
+                document.getElementById('aiDashboardResultContainer').style.display = 'none';
+                aiToast('🗑️ Análise de IA apagada com sucesso!');
+            });
+        }
+
+        function processarAlteracao() { 
+            document.querySelectorAll('.trade-row').forEach(tr => calcularLinha(tr)); 
+            salvarDados(); 
+
+            let linhaPreenchida = false;
+            document.querySelectorAll('.trade-row').forEach(row => {
+                const pEnt = parseFloat(row.querySelector('.in-pent').value) || 0;
+                const pSai = parseFloat(row.querySelector('.in-psai').value) || 0;
+                const qtd = parseFloat(row.querySelector('.in-qtd').value) || 0;
+                if (pEnt > 0 && qtd > 0 && pSai > 0) {
+                    linhaPreenchida = true;
+                }
+            });
+
+            const btnExportar = document.getElementById('btnExportarBackup');
+            if (btnExportar && linhaPreenchida) {
+                btnExportar.classList.add('btn-glow-white');
+            }
+        }
+
+        function calcularLinha(row) {
+            const dir = row.querySelector('.in-dir').value; const pEnt = parseFloat(row.querySelector('.in-pent').value) || 0;
+            const pSai = parseFloat(row.querySelector('.in-psai').value) || 0; const qtd = parseFloat(row.querySelector('.in-qtd').value) || 0;
+            const taxa = parseFloat(row.querySelector('.in-taxa').value) || 0;
+            const fTotEnt = row.querySelector('.out-totent'); const fTotSai = row.querySelector('.out-totsai');
+            const fPnlBruto = row.querySelector('.out-pnlbruto'); const fPnlLiq = row.querySelector('.out-pnlliq');
+            const fPnlPerc = row.querySelector('.out-pnlperc'); const fRes = row.querySelector('.out-res');
+
+            [fPnlBruto, fPnlLiq, fPnlPerc, fRes].forEach(el => el.className = el.className.replace(/text-green|text-red|text-neutral/g, ''));
+
+            if (pEnt > 0 && qtd > 0) {
+                const totEnt = pEnt * qtd; fTotEnt.value = totEnt.toFixed(2);
+                if (pSai > 0) {
+                    const totSai = pSai * qtd; fTotSai.value = totSai.toFixed(2);
+                    let pnlBruto = dir === 'Long' ? (totSai - totEnt) : (totEnt - totSai);
+                    let pnlLiq = pnlBruto - taxa; let pnlPerc = (pnlBruto / totEnt) * 100;
+                    fPnlBruto.value = pnlBruto.toFixed(2); fPnlLiq.value = pnlLiq.toFixed(2); fPnlPerc.value = pnlPerc.toFixed(2) + '%';
+                    
+                    if (pnlLiq > 0) { fRes.value = 'Lucro'; [fPnlBruto, fPnlLiq, fPnlPerc, fRes].forEach(el => el.classList.add('text-green')); } 
+                    else if (pnlLiq < 0) { fRes.value = 'Perda'; [fPnlBruto, fPnlLiq, fPnlPerc, fRes].forEach(el => el.classList.add('text-red')); } 
+                    else { fRes.value = 'Empate'; [fPnlBruto, fPnlLiq, fPnlPerc, fRes].forEach(el => el.classList.add('text-neutral')); }
+                } else { fTotSai.value = '-'; fPnlBruto.value = '-'; fPnlLiq.value = '-'; fPnlPerc.value = '-'; fRes.value = 'Aberto'; fRes.style.color = 'var(--cy-yellow)'; }
+            } else { fTotEnt.value = ''; fTotSai.value = ''; fPnlBruto.value = ''; fPnlLiq.value = ''; fPnlPerc.value = ''; fRes.value = 'Aberto'; }
+        }
+
+        function atualizarDashboard() {
+            if (!document.getElementById('dash-winrate') || document.getElementById('dashboard').style.display === 'none') return;
+            const dadosSalvos = localStorage.getItem('cryptoTradesData'); let trades = [];
+            try { trades = dadosSalvos ? JSON.parse(dadosSalvos) : []; if (!Array.isArray(trades)) trades = []; } catch(e) {}
+
+            let tc = 0, v = 0, d = 0, sg = 0, sp = 0, ret = 0, maxD = 0, pico = 0, saldo = 0;
+            trades.forEach(t => {
+                if (t.pEnt > 0 && t.pSai > 0 && t.qtd > 0) {
+                    let liq = (t.dir === 'Long' ? (t.pSai*t.qtd - t.pEnt*t.qtd) : (t.pEnt*t.qtd - t.pSai*t.qtd)) - (t.taxa||0);
+                    tc++; ret += liq; saldo += liq;
+                    if (saldo > pico) pico = saldo; let draw = pico - saldo; if (draw > maxD) maxD = draw;
+                    if (liq > 0) { v++; sg += liq; } else if (liq < 0) { d++; sp += Math.abs(liq); }
+                }
+            });
+
+            const wr = tc > 0 ? (v / tc) * 100 : 0; const pf = sp > 0 ? (sg / sp) : (sg > 0 ? 999 : 0);
+            const mg = v > 0 ? (sg / v) : 0; const mp = d > 0 ? (sp / d) : 0;
+            const exp = tc > 0 ? ((wr/100) * mg) - ((1-(wr/100)) * mp) : 0;
+
+            const setV = (id, val, isCur, isPct) => {
+                const el = document.getElementById(id); let f = val;
+                if(isCur) f = (val >= 0 ? '+$' : '-$') + Math.abs(val).toFixed(2); if(isPct) f = val.toFixed(2) + '%';
+                el.innerText = typeof val === 'number' && !isCur && !isPct ? val.toFixed(2) : f;
+                el.className = 'metric-value'; if (val > 0) el.classList.add('text-green'); else if (val < 0) el.classList.add('text-red');
+            };
+
+            setV('dash-winrate', wr, false, true); setV('dash-profitfactor', pf);
+            document.getElementById('dash-totaltrades').innerText = tc; setV('dash-return', ret, true);
+            document.getElementById('dash-avg').innerText = `+$${mg.toFixed(2)} / -$${mp.toFixed(2)}`;
+            setV('dash-expectancy', exp, true); document.getElementById('dash-drawdown').innerText = `-$${maxD.toFixed(2)}`;
+        }
+
+        function salvarDados() {
+            const trades = [];
+            document.querySelectorAll('.trade-row').forEach(row => {
+                trades.push({ dtEnt: row.querySelector('.in-dtEnt').value, dtSai: row.querySelector('.in-dtSai').value, par: row.querySelector('.in-par').value, dir: row.querySelector('.in-dir').value, tipo: row.querySelector('.in-tipo').value, pEnt: row.querySelector('.in-pent').value, pSai: row.querySelector('.in-psai').value, qtd: row.querySelector('.in-qtd').value, taxa: row.querySelector('.in-taxa').value, sl: row.querySelector('.in-sl').value, tp: row.querySelector('.in-tp').value, setup: row.querySelector('.in-setup').value, notas: row.querySelector('.in-notas').value });
+            });
+            localStorage.setItem('cryptoTradesData', JSON.stringify(trades.reverse())); 
+        }
+
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem('cryptoTradesData'); document.getElementById('tableBody').innerHTML = ''; 
+            if (dadosSalvos) { try { let trades = JSON.parse(dadosSalvos); if (!Array.isArray(trades)) trades = []; trades.forEach(t => adicionarLinha(t, true)); } catch(e) {} }
+        }
+
+        function limparTodosDados() {
+            mostrarConfirmacao("ATENÇÃO: Vai apagar todas as trades do seu dispositivo. Continuar?", () => {
+                localStorage.removeItem('cryptoTradesData'); 
+                
+                localStorage.removeItem('cryptoRelatorioTXT');
+                document.getElementById('relatorioTXTBox').value = '';
+                document.getElementById('relatorioContainer').style.display = 'none';
+                
+                localStorage.removeItem('cryptoUltimaAnaliseIA');
+                document.getElementById('aiDashboardResultBox').value = '';
+                document.getElementById('aiDashboardResultContainer').style.display = 'none';
+                
+                carregarDados(); atualizarDashboard();
+                if(document.getElementById('registro').style.display === 'block' && !modoApenasLeitura){ adicionarLinha(); }
+            });
+        }
+        
+        function habilitarEdicao() {
+            modoApenasLeitura = false;
+            configurarModoJanela('Edição de Histórico', true);
+            aiToast('✏️ Modo de edição ativado! Faça suas alterações e clique em Salvar.');
+        }
+
+        function salvarEdicao() {
+            salvarDados();
+            
+            const dashboard = document.getElementById('dashboard');
+            const originalDisplay = dashboard.style.display;
+            dashboard.style.display = 'block';
+            atualizarDashboard();
+            dashboard.style.display = originalDisplay;
+
+            exportarRelatorioTXT();
+            aiToast('✅ Histórico salvo e relatório atualizado!');
+        }
+
+        // =========================================================================
+        // MOTOR INTELIGÊNCIA ARTIFICIAL MULTI-AGENTES E RECURSOS NoVOS
+        // =========================================================================
+
+        let globalCooldown = 0;
+        let globalCooldownTimer = null;
+
+        function startGlobalCooldown() {
+            if (globalCooldown > 0) return;
+            globalCooldown = 60;
+            
+            const cards = ['cardColetar', 'cardAnalise', 'cardPrompt'];
+            const labels = ['labelColetar', 'labelAnalise', 'labelPrompt'];
+            
+            const origTexts = {
+                'labelColetar': 'Data Collector',
+                'labelAnalise': document.getElementById('labelAnalise').textContent,
+                'labelPrompt': document.getElementById('labelPrompt').textContent
+            };
+
+            cards.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('disabled');
+            });
+
+            const updateTexts = (seconds) => {
+                const text = `📡 Carregando dados...🛜 (${seconds}s)`;
+                labels.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = text;
+                });
+            };
+
+            updateTexts(globalCooldown);
+
+            globalCooldownTimer = setInterval(() => {
+                globalCooldown--;
+                if (globalCooldown > 0) {
+                    updateTexts(globalCooldown);
+                } else {
+                    clearInterval(globalCooldownTimer);
+                    globalCooldown = 0;
+                    
+                    labels.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = origTexts[id];
+                    });
+
+                    document.getElementById('cardColetar').classList.remove('disabled');
+                    
+                    if (currentCrypto.symbol !== 'BNSOLUSDT' && currentCrypto.symbol !== 'WBETHUSDT') {
+                        document.getElementById('cardPrompt').classList.remove('disabled');
+                        if (aiState.connected) {
+                            document.getElementById('cardAnalise').classList.remove('disabled');
+                        }
+                    } else {
+                        document.getElementById('labelAnalise').textContent = '❌';
+                        document.getElementById('labelPrompt').textContent = '❌';
+                    }
+                }
+            }, 1000);
+        }
+
+        const cryptoConfigs = {
+            'BTC': { name: 'BITCOIN', symbol: 'BTCUSDT', llama: 'Bitcoin', color: '#f7931a', rgb: '247,147,26', icon: '🅱️' },
+            'ETH': { name: 'ETHEREUM', symbol: 'ETHUSDT', llama: 'Ethereum', color: '#627eea', rgb: '98,126,234', icon: '🔷' },
+            'SOL': { name: 'SOLANA', symbol: 'SOLUSDT', llama: 'Solana', color: '#9400D3', rgb: '20,241,149', icon: '⚕️' },
+            'BNB': { name: 'BNB', symbol: 'BNBUSDT', llama: 'BSC', color: '#f3ba2f', rgb: '243,186,47', icon: '🔶' },
+            'XRP': { name: 'XRP', symbol: 'XRPUSDT', llama: 'Ripple', color: '#23292f', rgb: '35,41,47', icon: '✖️' },
+            'XLM': { name: 'STELLAR', symbol: 'XLMUSDT', llama: 'Stellar', color: '#ffffff', rgb: '255,255,255', icon: '🔘' },
+            'SUI': { name: 'SUI', symbol: 'SUIUSDT', llama: 'Sui', color: '#4a8bf6', rgb: '74,139,246', icon: '💧' },
+            'TRX': { name: 'TRON', symbol: 'TRXUSDT', llama: 'Tron', color: '#ff060a', rgb: '255,6,10', icon: '🛑' },
+            'AVAX':{ name: 'AVALANCHE', symbol: 'AVAXUSDT', llama: 'Avalanche', color: '#e84142', rgb: '232,65,66', icon: '♨️' },
+            'ADA': { name: 'CARDANO', symbol: 'ADAUSDT', llama: 'Cardano', color: '#0033ad', rgb: '0,51,173', icon: '🌐' },
+            'BCH': { name: 'BITCOIN CASH', symbol: 'BCHUSDT', llama: 'Bitcoin Cash', color: '#0ac18e', rgb: '10,193,142', icon: '❇️' },
+            'LTC': { name: 'LITECOIN', symbol: 'LTCUSDT', llama: 'Litecoin', color: '#345d9d', rgb: '52,93,157', icon: '💠' },
+            'DOGE': { name: 'DOGECOIN', symbol: 'DOGEUSDT', llama: 'Dogecoin', color: '#c2a633', rgb: '194,166,51', icon: '🐶' },
+            'UNI': { name: 'UNISWAP', symbol: 'UNIUSDT', llama: 'Uniswap', color: '#ff007a', rgb: '255,0,122', icon: '🦄' },
+            'ORCA': { name: 'ORCA', symbol: 'ORCAUSDT', llama: 'Orca', color: '#f3d55b', rgb: '243,213,91', icon: '🫍' },
+            'CAKE': { name: 'PANCAKESWAP', symbol: 'CAKEUSDT', llama: 'PancakeSwap', color: '#d1884f', rgb: '209,136,79', icon: '🥞' },
+            'HYPE': { name: 'HYPERLIQUID', symbol: 'HYPEUSDT', llama: 'Hyperliquid', color: '#40e0d0', rgb: '64,224,208', icon: '💦' },
+            'JUP': { name: 'JUPITER', symbol: 'JUPUSDT', llama: 'Jupiter', color: '#43c4a8', rgb: '67,196,168', icon: '🪐' },
+            'GRAM': { name: 'GRAM', symbol: 'GRAMUSDT', llama: 'Gram', color: '#0098ea', rgb: '0,152,234', icon: '💎' },
+            'POL': { name: 'POLYGON', symbol: 'POLUSDT', llama: 'Polygon', color: '#7b3fe4', rgb: '123,63,228', icon: '☸️' },
+            'PAXG': { name: 'PAXOS GOLD', symbol: 'PAXGUSDT', llama: 'Paxos Gold', color: '#d4af37', rgb: '212,175,55', icon: '🪙' },
+            'XAUT': { name: 'TETHER GOLD', symbol: 'XAUTUSDT', llama: 'Tether Gold', color: '#d4af37', rgb: '212,175,55', icon: '⚜️' },
+            'BNSOL': { name: 'BNSOL', symbol: 'BNSOLUSDT', llama: 'Binance Staked SOL', color: '#7b3fe4', rgb: '123,63,228', icon: '🔶' },
+            'WBETH': { name: 'WBETH', symbol: 'WBETHUSDT', llama: 'Binance Staked ETH', color: '#d3d3d3', rgb: '211,211,211', icon: '🔶' },
+            'DOT': { name: 'POLKADOT', symbol: 'DOTUSDT', llama: 'Polkadot', color: '#FA8072', rgb: '250,128,114', icon: '♓' },
+            'ARB': { name: 'ARBITRUM', symbol: 'ARBUSDT', llama: 'Arbitrum', color: '#28a0f0', rgb: '40,160,240', icon: '🟦' },
+            'RENDER': { name: 'RENDER', symbol: 'RENDERUSDT', llama: 'Render', color: '#ff4b4b', rgb: '255,75,75', icon: '🔴' },
+            'TAO': { name: 'BITTENSOR', symbol: 'TAOUSDT', llama: 'Bittensor', color: '#ffffff', rgb: '255,255,255', icon: '⚪' }
+        };
+
+        let currentCrypto = cryptoConfigs['BTC'];
+        let aiState = { provider: '', apiKey: '', tgToken: '', tgChat: '', connected: false, collectingData: false, runningAnalysis: false, rawDataText: '', lastCollected: null };
+
+        function abrirAgente(coinId) {
+            currentCrypto = cryptoConfigs[coinId];
+            
+            document.documentElement.style.setProperty('--theme-color', currentCrypto.color);
+            document.documentElement.style.setProperty('--theme-rgb', currentCrypto.rgb);
+            
+            document.getElementById('ai-title').innerText = currentCrypto.name;
+            document.getElementById('ai-icon').innerText = currentCrypto.icon;
+            document.getElementById('onchainSectionTitle').innerText = `📊 Dados On-Chain — ${currentCrypto.name}`;
+            document.getElementById('dex24hSub').innerText = `Binance ${currentCrypto.symbol}`;
+            document.getElementById('oiSub').innerText = `${currentCrypto.symbol} Perp`;
+            
+            document.getElementById('stakingWarningBox').style.display = 'none';
+
+            if (coinId === 'BNSOL' || coinId === 'WBETH') {
+                document.getElementById('agentYieldInfo').style.display = 'block';
+                document.getElementById('agentYieldLabel').textContent = `🔶 Rendimento ${coinId}:`;
+                document.getElementById('agentYieldLabel').style.color = currentCrypto.color;
+                document.getElementById('agentYieldValue').textContent = globalYields[coinId];
+                
+                document.getElementById('cardAnalise').classList.add('disabled');
+                document.getElementById('cardAnalise').style.pointerEvents = 'none';
+                document.getElementById('cardPrompt').classList.add('disabled');
+                document.getElementById('cardPrompt').style.pointerEvents = 'none';
+                document.getElementById('labelAnalise').textContent = '❌';
+                document.getElementById('labelPrompt').textContent = '❌';
+            } else {
+                document.getElementById('agentYieldInfo').style.display = 'none';
+                
+                document.getElementById('cardPrompt').classList.remove('disabled');
+                document.getElementById('cardPrompt').style.pointerEvents = 'auto';
+                document.getElementById('cardAnalise').style.pointerEvents = 'auto';
+                document.getElementById('labelAnalise').textContent = 'Consultar MultiAgentes - IA ';
+                document.getElementById('labelPrompt').textContent = '👽🐸👾🤖👹';
+                if (aiState.connected && globalCooldown === 0) {
+                    document.getElementById('cardAnalise').classList.remove('disabled');
+                } else {
+                    document.getElementById('cardAnalise').classList.add('disabled');
+                }
+            }
+
+            ['dex24h','tvl','stablecoins','stablecoinFlow','fees','feesStatus','oi','cvd','lsRatio','lsSplit','bookBid','bookAsk'].forEach(id => {
+                document.getElementById(id).innerHTML = '—';
+            });
+            document.getElementById('stakingYieldCard').style.display = 'none';
+            document.getElementById('tfTableBody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--ai-muted);padding:20px;">Aguardando coleta de dados...</td></tr>';
+            document.getElementById('rawPanel').style.display = 'none';
+            document.getElementById('resultPanel').classList.remove('visible');
+
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('mainHeader').style.display = 'none';
+            document.getElementById('mainTabs').style.display = 'none';
+            document.getElementById('ai-view').style.display = 'block';
+            window.scrollTo(0, 0);
+
+            loadCredentials();
+        }
+
+        function fecharAgente() {
+            document.getElementById('ai-view').style.display = 'none';
+            configurarModoPrincipal();
+        }
+
+        function aiToast(msg, dur = 2800) {
+            const el = document.getElementById('ai-toast'); el.textContent = msg;
+            el.classList.add('show'); setTimeout(() => el.classList.remove('show'), dur);
+        }
+
+        function setStatus(type, text) {
+            document.getElementById('statusDot').className = 'ai-status-dot ' + type;
+            document.getElementById('statusText').textContent = text;
+        }
+
+        function setProvider(p) {
+            aiState.provider = p;
+            const selectEl = document.getElementById('apiProviderSelect');
+            if (selectEl) {
+                selectEl.value = p;
+            }
+        }
+
+        function onApiInput(val) {
+            const key = val.trim();
+            document.getElementById('btnConnect').disabled = key.length === 0;
+            
+            if (key.length === 0) {
+                setProvider(''); 
+                return;
+            }
+            
+            if (key.startsWith('AIzaSy')) {
+                setProvider('gemini');
+            } else if (key.startsWith('xai-')) {
+                setProvider('grok');
+            }
+        }
+
+        function saveCredentials() {
+            localStorage.setItem('global_intel_apiKey', document.getElementById('apiKeyInput').value.trim());
+            localStorage.setItem('global_intel_tgToken', document.getElementById('tgTokenInput').value.trim());
+            localStorage.setItem('global_intel_tgChat', document.getElementById('tgChatInput').value.trim());
+            localStorage.setItem('global_intel_provider', aiState.provider);
+            aiToast('✅ Configurações salvas!');
+        }
+
+        function loadCredentials() {
+            const key = localStorage.getItem('global_intel_apiKey') || '';
+            const savedProvider = localStorage.getItem('global_intel_provider');
+
+            document.getElementById('apiKeyInput').value = key;
+            document.getElementById('tgTokenInput').value = localStorage.getItem('global_intel_tgToken') || '';
+            document.getElementById('tgChatInput').value = localStorage.getItem('global_intel_tgChat') || '';
+            
+            document.getElementById('btnConnect').disabled = key.trim().length === 0;
+
+            if (savedProvider) {
+                setProvider(savedProvider);
+            } else if (key) {
+                onApiInput(key);
+            }
+        }
+
+        async function connectApi() {
+            const key = document.getElementById('apiKeyInput').value.trim(); 
+            if (!key) return;
+            
+            if (!aiState.provider) {
+                aiToast('❌ Escolha a API no seletor primeiro.');
+                return;
+            }
+
+            aiState.apiKey = key; 
+            aiState.tgToken = document.getElementById('tgTokenInput').value.trim(); 
+            aiState.tgChat  = document.getElementById('tgChatInput').value.trim();
+
+            setStatus('loading','Conectando...');
+            document.getElementById('btnConnect').disabled = true; document.getElementById('btnConnect').textContent = 'Testando...';
+
+            try {
+                let ok = false;
+                if (aiState.provider === 'gemini') {
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${aiState.apiKey}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ contents:[{parts:[{text:'ping'}]}] }) });
+                    ok = r.status === 200;
+                } else {
+                    const r = await fetch('https://api.x.ai/v1/chat/completions', { method:'POST', headers:{'Authorization':`Bearer ${aiState.apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify({ model:'grok-4.3', messages:[{role:'user',content:'ping'}], max_tokens:2 }) });
+                    ok = r.status === 200;
+                }
+                if (ok) {
+                    aiState.connected = true; setStatus('connected', `Conectado · ${aiState.provider.toUpperCase()}`);
+                    document.getElementById('btnConnect').textContent = `✓ Conectado (${aiState.provider.toUpperCase()})`;
+                    
+                    document.getElementById('apiKeyInput').disabled = true; 
+                    document.getElementById('tgTokenInput').disabled = true; 
+                    document.getElementById('tgChatInput').disabled = true;
+                    document.getElementById('apiProviderSelect').disabled = true;
+                    
+                    if (globalCooldown === 0 && currentCrypto.symbol !== 'BNSOLUSDT' && currentCrypto.symbol !== 'WBETHUSDT') {
+                        document.getElementById('cardAnalise').classList.remove('disabled'); 
+                    }
+                    aiToast('✅ API conectada!');
+                } else { throw new Error('Inválida'); }
+            } catch(e) {
+                setStatus('error','Erro'); document.getElementById('btnConnect').textContent = 'Tentar Novamente'; document.getElementById('btnConnect').disabled = false; aiToast('❌ Falha na chave.');
+            }
+        }
+
+        function calcRSI(prices, p = 14) {
+            if (prices.length < p + 1) p = Math.max(2, prices.length - 1);
+            const deltas = prices.slice(1).map((pr,i) => pr - prices[i]);
+            let ag = deltas.map(d=>d>0?d:0).slice(0,p).reduce((a,b)=>a+b,0)/p, al = deltas.map(d=>d<0?-d:0).slice(0,p).reduce((a,b)=>a+b,0)/p;
+            for (let i = p; i < deltas.length; i++) { ag = (ag*(p-1) + (deltas[i]>0?deltas[i]:0))/p; al = (al*(p-1) + (deltas[i]<0?-deltas[i]:0))/p; }
+            if (al === 0) return ag > 0 ? 100 : 50; return 100 - 100 / (1 + (ag/al));
+        }
+        function calcBollinger(prices, p = 20) {
+            if (prices.length < p) p = Math.max(1, prices.length);
+            const rel = prices.slice(-p); const sma = rel.reduce((a,b)=>a+b,0)/p;
+            const std = Math.sqrt(rel.reduce((s,x)=>s+(x-sma)**2,0)/p); return [sma - 2*std, sma, sma + 2*std];
+        }
+        function calcEMA(prices, p) {
+            if (prices.length < p) return 0; const k = 2/(p+1);
+            let ema = prices.slice(0, p).reduce((a,b)=>a+b,0)/p;
+            for (let pr of prices.slice(p)) ema = pr*k + ema*(1-k); return ema;
+        }
+        function calcOBV(prices, vols) {
+            let obv = 0; for (let i = 1; i < prices.length; i++) { if (prices[i] > prices[i-1]) obv+=vols[i]; else if (prices[i] < prices[i-1]) obv-=vols[i]; } return obv;
+        }
+        function fmt(n, dec = 2) { return (typeof n !== 'number' || isNaN(n)) ? '—' : n.toLocaleString('pt-BR', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+        function fmtB(n) { return `$${(n/1e9).toFixed(2)}B`; } function fmtM(n) { return `$${(n/1e6).toFixed(1)}M`; }
+
+        async function collectData(isInternal = false) {
+            if (currentCrypto.symbol === 'BNSOLUSDT' || currentCrypto.symbol === 'WBETHUSDT') {
+                document.getElementById('stakingWarningBox').style.display = 'block';
+            }
+            
+            if (!isInternal && globalCooldown > 0) { aiToast('⏳ Aguarde o tempo de recarga!'); return; }
+            if (aiState.collectingData) return; aiState.collectingData = true;
+            
+            if (!isInternal) startGlobalCooldown();
+
+            document.getElementById('cardColetar').classList.add('loading'); 
+            if (globalCooldown === 0) document.getElementById('labelColetar').textContent = 'Coletando...';
+            setStatus('loading',`Coletando dados do ${currentCrypto.name}...`);
+            const report = []; const ts = () => new Date().toLocaleTimeString('pt-BR');
+
+            report.push(`📊 --- DADOS ON-CHAIN (${currentCrypto.name}) ---`);
+            let cexVol = 0, dexVol = 0, tvl = 0, stableMcap = 0, stableChange = 0, fees = 0;
+            let stableFlowStatus = 'Dados Insuficientes.';
+
+            try { 
+                const rCex = await fetch(`https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${currentCrypto.symbol}`); 
+                if(rCex.ok) { const dCex = await rCex.json(); cexVol = parseFloat(dCex.quoteVolume) || 0; }
+                if(cexVol === 0) {
+                    const cgRes = await fetch(`https://api.coingecko.com/api/v3/exchanges/binance/tickers?coin_ids=${currentCrypto.name.toLowerCase()}`);
+                    if(cgRes.ok) {
+                        const cgData = await cgRes.json();
+                        const ticker = cgData.tickers.find(t => t.target === 'USDT');
+                        if(ticker) cexVol = ticker.converted_volume.usd;
+                    }
+                }
+            } catch(e) {}
+            try {
+                let slug = currentCrypto.llama.toLowerCase().replace(/\s+/g, '-');
+                const rDex = await fetch(`https://api.llama.fi/overview/dexs/${slug}`);
+                if(rDex.ok) { const dDex = await rDex.json(); dexVol = dDex.total24h || 0; }
+            } catch(e) {}
+
+            let cexStr = cexVol > 0 ? fmtB(cexVol) : "Dados Insuficientes.";
+            let dexStr = dexVol > 0 ? fmtB(dexVol) : "Dados Insuficientes.";
+            report.push(`Volume 24h     : CEX: ${cexStr} | DEX: ${dexStr}`);
+
+            try { 
+                const rChain = await fetch('https://api.llama.fi/v2/chains'); 
+                const dChain = await rChain.json(); 
+                const ch = dChain.find(c => typeof c === 'object' && (c.name||'').toLowerCase() === currentCrypto.llama.toLowerCase()); 
+                if (ch && ch.tvl) tvl = ch.tvl;
+                if(tvl === 0) {
+                    let slug = currentCrypto.llama.toLowerCase().replace(/\s+/g, '-');
+                    const rProt = await fetch(`https://api.llama.fi/tvl/${slug}`);
+                    if (rProt.ok) {
+                        const tvlData = await rProt.json();
+                        if (typeof tvlData === 'number') tvl = tvlData;
+                    }
+                }
+            } catch(e) {}
+            let tvlStr = tvl > 0 ? fmtB(tvl) : "Dados Insuficientes.";
+            report.push(`TVL DeFi       : ${tvlStr}`);
+
+            try {
+                const rLlama = await fetch('https://stablecoins.llama.fi/stablecoinchains'); 
+                if (rLlama.ok) { 
+                    const dLlama = await rLlama.json(); 
+                    const cData = dLlama.find(c => (c.name || '').toLowerCase() === currentCrypto.llama.toLowerCase()); 
+                    if (cData && cData.totalCirculatingUSD) stableMcap = cData.totalCirculatingUSD.peggedUSD || 0; 
+                } 
+                const rChart = await fetch(`https://stablecoins.llama.fi/stablecoincharts/${currentCrypto.llama}`); 
+                if (rChart.ok) { 
+                    const dChart = await rChart.json(); 
+                    if (dChart && dChart.length >= 2) { 
+                        stableChange = (dChart[dChart.length-1].totalCirculatingUSD.peggedUSD||0) - (dChart[dChart.length-2].totalCirculatingUSD.peggedUSD||0); 
+                        stableFlowStatus = `${stableChange>=0?'Inflow':'Outflow'} (${stableChange>=0?'+':''}${fmtM(Math.abs(stableChange))})`; 
+                    } 
+                }
+            } catch (e) {}
+            let stableMcapStr = stableMcap > 0 ? fmtB(stableMcap) : "Dados Insuficientes.";
+            report.push(`Stablecoins    : ${stableMcapStr} | ${stableFlowStatus}`);
+
+            try { 
+                let slug = currentCrypto.llama.toLowerCase().replace(/\s+/g, '-');
+                const rFees = await fetch(`https://api.llama.fi/overview/fees/${slug}`); 
+                if(rFees.ok) {
+                    const dFees = await rFees.json(); 
+                    fees = dFees.total24h || 0; 
+                }
+            } catch (e) {}
+            let feesStr = fees > 0 ? fmtM(fees) : "Dados Insuficientes.";
+            report.push(`Fees de Rede   : ${feesStr}`);
+
+            if (currentCrypto.symbol === 'BNSOLUSDT' || currentCrypto.symbol === 'WBETHUSDT') {
+                document.getElementById('stakingYieldCard').style.display = 'block';
+                document.getElementById('stakingYield').textContent = 'Calculando...';
+                try {
+                    let aprStr = 'N/D';
+                    const rYield = await fetch('https://yields.llama.fi/pools');
+                    if (rYield.ok) {
+                        const dYield = await rYield.json();
+                        const targetSymbol = currentCrypto.symbol === 'WBETHUSDT' ? 'WBETH' : 'BNSOL';
+                        const pool = dYield.data.find(p => p.symbol.toUpperCase() === targetSymbol && p.project.includes('binance'));
+                        
+                        if (pool && pool.apy) {
+                            aprStr = pool.apy.toFixed(2) + '%';
+                        } else {
+                            aprStr = currentCrypto.symbol === 'WBETHUSDT' ? '≈ 3.00%' : '≈ 6.50%'; 
+                        }
+                    } else {
+                        aprStr = currentCrypto.symbol === 'WBETHUSDT' ? '≈ 3.00%' : '≈ 6.50%';
+                    }
+                    document.getElementById('stakingYield').textContent = aprStr;
+                    report.push(`Rendimento Staking (APR): ${aprStr}`);
+                } catch(e) {
+                    document.getElementById('stakingYield').textContent = 'Erro';
+                    report.push(`Rendimento Staking (APR): Erro na API`);
+                }
+            } else {
+                document.getElementById('stakingYieldCard').style.display = 'none';
+            }
+
+            document.getElementById('dex24h').textContent = cexVol > 0 ? fmtB(cexVol) : '—'; 
+            document.getElementById('dex24hSub').textContent = `DEX: ${dexVol > 0 ? fmtB(dexVol) : '—'}`;
+            document.getElementById('tvl').textContent = tvl > 0 ? fmtB(tvl) : '—';
+            document.getElementById('stablecoins').textContent = stableMcap > 0 ? fmtB(stableMcap) : '—';
+            if(stableFlowStatus === 'Dados Insuficientes.') {
+                document.getElementById('stablecoinFlow').textContent = '—';
+            } else {
+                document.getElementById('stablecoinFlow').innerHTML = stableChange >= 0 ? `<span style="color:var(--ai-green)">✅ Inflow +${fmtM(Math.abs(stableChange))}</span>` : `<span style="color:var(--ai-red)">⚠️ Outflow -${fmtM(Math.abs(stableChange))}</span>`;
+            }
+            document.getElementById('fees').textContent = fees > 0 ? fmtM(fees) : '—'; 
+            document.getElementById('feesStatus').textContent = fees > 1500000 ? '🔥 Alta' : (fees > 0 ? 'Média/Baixa' : '—');
+            document.getElementById('onchainSection').style.display = '';
+
+            report.push(`\n📈 --- DADOS DE MERCADO (Binance ${currentCrypto.symbol} Futures) ---`);
+            try {
+                const [rOI, rCVD, rTop, rDepth, rSpotDepth, rFutDepth] = await Promise.all([
+                    fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${currentCrypto.symbol}`).then(r=>r.json()),
+                    fetch(`https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=${currentCrypto.symbol}&period=5m&limit=20`).then(r=>r.json()),
+                    fetch(`https://fapi.binance.com/futures/data/topLongShortPositionRatio?symbol=${currentCrypto.symbol}&period=5m&limit=1`).then(r=>r.json()),
+                    fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${currentCrypto.symbol}&limit=5`).then(r=>r.json()),
+                    fetch(`https://api.binance.com/api/v3/depth?symbol=${currentCrypto.symbol}&limit=50`).then(r=>r.json()).catch(()=>({bids:[],asks:[]})),
+                    fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${currentCrypto.symbol}&limit=50`).then(r=>r.json()).catch(()=>({bids:[],asks:[]}))
+                    ]);
+                const oi = parseFloat(rOI.openInterest); const cvd = rCVD.reduce((s,c) => s + parseFloat(c.buyVol) - parseFloat(c.sellVol), 0);
+                const lsRatio = parseFloat(rTop[0].longShortRatio); const longPct = (parseFloat(rTop[0].longAccount)*100).toFixed(1); const shortPct = (parseFloat(rTop[0].shortAccount)*100).toFixed(1);
+                const topBid = rDepth.bids[0][0]; const topAsk = rDepth.asks[0][0];
+
+                const calcVol = (arr) => arr.reduce((sum, item) => sum + (parseFloat(item[0]) * parseFloat(item[1])), 0);
+                const spotBidsVol = calcVol(rSpotDepth.bids || []); const spotAsksVol = calcVol(rSpotDepth.asks || []);
+                const futBidsVol = calcVol(rFutDepth.bids || []); const futAsksVol = calcVol(rFutDepth.asks || []);
+
+                report.push(`Open Interest: ${fmt(oi,2)} | CVD (100m): ${cvd>=0?'+':''}${fmt(cvd,2)}\nTop Traders L/S Ratio: ${lsRatio.toFixed(2)} (Longs: ${longPct}% | Shorts: ${shortPct}%)\nBook Topo: Bids ${topBid} | Asks ${topAsk}`);
+                report.push(`Order Book Profile:\n- Spot: Bids Vol $${fmt(spotBidsVol,2)} | Asks Vol $${fmt(spotAsksVol,2)}\n- Futuros: Bids Vol $${fmt(futBidsVol,2)} | Asks Vol $${fmt(futAsksVol,2)}`);
+                
+                document.getElementById('oi').textContent = fmt(oi,0);
+                const cvdEl = document.getElementById('cvd'); cvdEl.textContent = (cvd>=0?'+':'')+fmt(cvd,0); cvdEl.className = 'dc-value ' + (cvd>=0?'green':'red');
+                document.getElementById('lsRatio').textContent = lsRatio.toFixed(2); document.getElementById('lsSplit').textContent = `L: ${longPct}% | S: ${shortPct}%`;
+                document.getElementById('bookBid').innerHTML = `<span style="color:var(--ai-green)">B: $${topBid}</span>`; document.getElementById('bookAsk').textContent = `A: $${topAsk}`;
+                document.getElementById('marketSection').style.display = '';
+
+            report.push('\n🌐 Análise Técnica Multitimeframe:');
+            const tbody = document.getElementById('tfTableBody'); tbody.innerHTML = '';
+            
+            // Nova lista temporária para armazenar a anatomia das velas antes de injetar no relatório
+            let candleAnatomy = ['\n🕯️ --- ANATOMIA DOS CANDLES (PRICE ACTION) ---'];
+
+            for (const [l, tf] of [['15 MIN','15m'],['1 HORA','1h'],['4 HORAS','4h'],['1 DIA','1d'],['1 SEMANA','1w']]) {
+                try {
+                    const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${currentCrypto.symbol}&interval=${tf}&limit=200`);
+                    const k = await res.json(); const p = k.map(c=>parseFloat(c[4])); const v = k.map(c=>parseFloat(c[5]));
+                    const rsi = calcRSI(p); const bb = calcBollinger(p); const pr = p[p.length-1];
+                    
+                    report.push(`📅 ${l} | 💰 $${fmt(pr,2)} | RSI: ${rsi.toFixed(1)} | EMA9/21/50/200: ${fmt(calcEMA(p,9),2)} / ${fmt(calcEMA(p,21),2)} / ${fmt(calcEMA(p,50),2)} / ${fmt(calcEMA(p,200),2)}`);
+                    
+                    // ─── EXTRAÇÃO AUTOMÁTICA DE PRICE ACTION ───
+                    if (tf === '1h' || tf === '1d') {
+                        const atual = k[k.length - 1]; // Vela que está rodando agora
+                        const anterior = k[k.length - 2]; // Última vela fechada
+                        
+                        if (tf === '1h') {
+                            candleAnatomy.push(`- Candle 1 Hora (Atual)    : Abertura: $${fmt(parseFloat(atual[1]),4)} | Máxima: $${fmt(parseFloat(atual[2]),4)} | Mínima: $${fmt(parseFloat(atual[3]),4)} | Último Preço: $${fmt(parseFloat(atual[4]),4)}`);
+                            candleAnatomy.push(`- Candle 1 Hora (Anterior) : Abertura: $${fmt(parseFloat(anterior[1]),4)} | Máxima: $${fmt(parseFloat(anterior[2]),4)} | Mínima: $${fmt(parseFloat(anterior[3]),4)} | Fechamento: $${fmt(parseFloat(anterior[4]),4)}`);
+                        } else if (tf === '1d') {
+                            candleAnatomy.push(`- Candle 1 Dia (Anterior)  : Abertura: $${fmt(parseFloat(anterior[1]),4)} | Máxima: $${fmt(parseFloat(anterior[2]),4)} | Mínima: $${fmt(parseFloat(anterior[3]),4)} | Fechamento: $${fmt(parseFloat(anterior[4]),4)}`);
+                        }
+                    }
+                    // ───────────────────────────────────────────
+
+                    tbody.innerHTML += `<tr><td>${l}</td><td>$${fmt(pr,2)}</td><td><span class="rsi-badge ${rsi<30?'oversold':rsi>70?'overbought':'neutral'}">${rsi<30?'🟢':rsi>70?'🔴':'🟡'} ${rsi.toFixed(1)}</span></td><td>$${fmt(bb[0],2)}</td><td>$${fmt(bb[1],2)}</td><td>$${fmt(bb[2],2)}</td><td>$${fmt(calcEMA(p,9),2)}</td><td>$${fmt(calcEMA(p,21),2)}</td><td>$${fmt(calcEMA(p,50),2)}</td><td>$${fmt(calcEMA(p,200),2)}</td></tr>`;
+                } catch(e) { report.push(`Erro no TF ${l}`); }
+            }
+            
+            // Junta os dados de anatomia coletados e empurra para o relatório final antes de exibir
+            report.push(candleAnatomy.join('\n'));
+
+                document.getElementById('tfSection').style.display = '';
+            } catch(e) { report.push(`Erro de mercado: ${e.message}`); }
+
+            aiState.rawDataText = report.join('\n'); document.getElementById('rawBody').textContent = aiState.rawDataText; document.getElementById('rawPanel').style.display = '';
+            setStatus(aiState.connected ? 'connected' : '', aiState.connected ? `Conectado · ${aiState.provider.toUpperCase()}` : `Dados coletados · ${ts()}`);
+            
+            document.getElementById('cardColetar').classList.remove('loading'); 
+            if (globalCooldown === 0) document.getElementById('labelColetar').textContent = 'Data Collector';
+            
+            aiState.collectingData = false; aiToast(`✅ Dados de ${currentCrypto.name} coletados!`);
+        }
+
+        function getSystemPrompt() {
+            return `<instrução_sistema>
+      <objetivo>
+        Você é um sistema multiagente integrado composto por 1 Agente Coletor + 5 Agentes Especialistas + 1 Agente Sintetizador. Atue como um sistema multiagentes de análise quantitativa e qualitativa de criptomoedas.
+        O objetivo é realizar uma análise de alta precisão do mercado de ${currentCrypto.name}, cruzando análise técnica, volume, momentum, teoria dos jogos e dados onchain.
+      </objetivo>
+
+      <instrução>
+        1. Os dados numéricos fornecidos no topo são a VERDADE ABSOLUTA e NUNCA devem ser sobrescritos por dados da web ou conhecimento prévio.
+        2. Sempre cruze dados onchain com ação de preço e indicadores técnicos.
+        3. Identifique divergências entre preço, volume, OI, CVD e onchain.
+        4. Seja preciso com números e tendências das últimas 24-48h.
+        5. Se qualquer indicador fundamental estiver marcado como "Dados Insuficientes" ou ausente, declare explicitamente: "Dado indisponível — peso anulado no cálculo". É estritamente proibido estimar ou inventar valores.
+      </instrução>
+
+    <definição_dos_agentes>
+        <agente id="0" nome="Data Collector e Onchain Analyst" icone="📡">
+            <role>
+                - Você é o Agente Coletor e Auditor de dados responsável por reunir todos os dados necessários antes dos outros agentes atuarem. Foque em precisão factual. Verifique o input do usuário e separe o que é fato matemático do que está ausente.
+            </role>
+             <tarefas>
+                - Mapear Preço, EMAs, RSI, Volume, OI, CVD, Onchain, L/S Ratio a partir do texto fornecido pelo usuário.
+                - Regra de Auditoria: Confie cegamente nos dados do usuário. Só acione a busca web se um dado vital estiver explicitamente faltando.
+                - Se os pares PAXG/USDT e XAUT/USDT forem selecionados, considere a dinâmica do mercado de ouro (t oz) na análise quando os dados forem especificamente para estes pares.
+             </tarefas>
+        </agente>
+
+        <agente id="1" nome="Analista Técnico - EMAs" icone="👽">
+            <role>Especialista em Price Action e EMAs (Binance).</role>
+            <indicadores_contexto>EMA 9, 21, 50 e 200.</indicadores_contexto>
+            <formato_resposta>
+                1. Alinhamento das médias
+                2. Cruzamentos recentes
+                3. Localização do preço vs EMAs
+                4. Convergência/Divergência
+                5. Diagnóstico de Tendência Macro e Micro
+                6. Comportamento do Preço vs. EMAs
+                7. Zonas Críticas de Suporte e Resistência
+                8. Cenários Prováveis e Gatilhos
+            </formato_resposta>
+        </agente>
+
+        <agente id="2" nome="Trader Profissional - Price Action" icone="🐸">
+            <role>Especialista em anatomia de candlesticks e padrões multi-velas.</role>
+            <formato_resposta>
+                1. Anatomia e Psicologia do Candle Atual
+                2. Padrões de Price Action Identificados
+                3. Validação por Volume
+                4. Projeção e Gatilhos
+            </formato_resposta>
+        </agente>
+
+        <agente id="3" nome="Analista de Fluxo e Volume (VSA)" icone="👾">
+            <role>Especialista em Volume, CVD e Order Flow.</role>
+            <formato_resposta>
+                1. Dinâmica do Volume Absoluto
+                2. Comportamento do CVD
+                3. Diagnóstico de Fluxo (Acumulação vs Distribuição)
+                4. Avaliar os 4 cenários clássicos de preço vs CVD + Volume Clímax.
+            </formato_resposta>
+        </agente>
+
+        <agente id="4" nome="Analista de Momentum e RSI" icone="🤖">
+            <role>Especialista em RSI e osciladores de momentum.</role>
+            <formato_resposta>
+                1. Localização Atual do RSI
+                2. Mapeamento de Divergências
+                3. Análise de Ruído vs Tendência
+                4. Gatilhos de Ação
+            </formato_resposta>
+        </agente>
+
+        <agente id="5" nome="Especialista em Teoria dos Jogos e Manipulação" icone="👹">
+            <role>Especialista em Teoria dos Jogos, detecção de armadilhas e fluxo institucional.</role>
+            <análise_estrutura>
+                Nash Liquidity, Devils Advocate, Inversão de Assimetria de Fluxo, Divergência CVD/OI, MEV, Stablecoin flows, etc.
+                <matriz_de_reflexividade>
+                O "Índice de Reflexividade" mede ciclos de retroalimentação (feedback loops) no mercado. Avalie ESTRITAMENTE sob estas regras:
+                - Loop de Long Squeeze (Cascata de Baixa): Se L/S Ratio alto (> 1.2) + Preço estagnado/caindo abaixo das EMAs + OI subindo = Compradores estão presos. O preço buscará os "Bids Vol" maiores para liquidá-los.
+                - Loop de Short Squeeze (Cascata de Alta): Se L/S Ratio baixo (< 0.9) + Preço sustentado acima das EMAs + CVD Vendedor sendo absorvido = Vendedores estão presos. O preço buscará os "Asks Vol" maiores.
+                - Efeito Ímã de Liquidez: Onde houver maior assimetria de capital no "Order Book Profile" (Spot ou Futuros), assuma que o preço será atraído para lá institucionalmente.
+                - Filtro de Inatividade (Contexto Temporal): Verifique o timestamp/dia atual. Se for fim de semana (Sábado/Domingo) e o Volume/CVD for baixo, reduza a agressividade do diagnóstico. Um L/S alto nestes dias pode ser apenas estagnação do varejo e falta de liquidez, não obrigatoriamente um "Squeeze" iminente. Exija confluência de Volume Clímax para validar a armadilha no fim de semana.
+                </matriz_de_reflexividade>
+            </análise_estrutura>
+        </agente>
+
+        <agente id="S" nome="Agente Sintetizador" icone="🔬">
+            <role>
+            Consolida todas as análises, aplica o protocolo de cruzamento, resolve contradições e gera o relatório final unificado.
+            </role>
+        
+            <regras_de_sintese>
+            1. Aplicar rigorosamente o protocolo_de_cruzamento_de_dados.
+            2. Obrigatoriedade de Transparência: Sempre mencionar explicitamente todas las divergências relevantes.
+            3. Resolver contradições usando onchain como tie-breaker principal (se válido).
+            4. O Agente 5 tiene peso de veto en casos de manipulación detectada.
+            5. Atribuir o Score de Confluência com base estrita nos Níveis (Tiers) Determinísticos definidos.
+            </regras_de_sintese>
+            
+            <score_de_confluencia>
+                - Atribuição de Score por Níveis (Tiers) Determinísticos (Elimina erros de aritmética interna do LLM):
+                1. Nível de Consenso Forte (4 a 5 agentes alinhados na mesma direção, sem divergências onchain): Atribuir um Score fixo de 8.5 ou 9.0.
+                2. Nível de Consenso Moderado (3 agentes alinhados, com pequenas ambiguidades secundárias): Atribuir um Score fixo de 7.0 ou 7.5.
+                3. Nível Neutro / Indeciso (Divisão equilibrada entre compradores e vendedores, sem direcionalidade clara): Atribuir um Score fixo de 5.0 ou 5.5.
+                4. Nível de Alerta / Divergência Crítica (Divergência grave entre dados Onchain e Preço, ou ativação de veto pelo Agente 5): O Score fica restrito obrigatoriamente a um teto máximo de 6.0, independentemente dos outros indicadores.
+            </score_de_confluencia>
+            
+            <saída_instrucao>
+                No relatório final, inclua obrigatoriamente logo após a seção "**Conclusão Sintetizada**":
+                **Score de Confluência: X.X/10** ([qualificação correspondente ao nível escolhido])
+            </saída_instrucao>
+        </agente>
+    </definição_dos_agentes>
+    
+    <protocolo_de_cruzamento_de_dados>
+    1. Validação EMA + Volume (Ag1 + Ag3)
+    2. Price Action + RSI (Ag2 + Ag4)
+    3. Divergências CVD/RSI (Ag3 + Ag4)
+    4. Divergência Onchain vs. Preço (Critério Forte - Ag0 + Ag1/Ag2/Ag3)
+    5. Filtro de Manipulação (Ag5 tem peso de veto)
+    6. Confluência mínima: pelo menos 4 agentes para sinal forte.
+    7. Sempre considerar dados onchain como tie-breaker em ambiguidade.
+    
+    <regra_anti_vies>
+    **Regra Anti-Viés (Obrigatória):**
+    - Se houver divergência grave entre pelo menos 2 agentes principais, o Sintetizador deve destacar na seção "Conclusão Consolidada" com o texto:
+      "**⚠️ DIVERGÊNCIA CRÍTICA DETECTADA:** [descrever brevemente]. Recomendação conservadora aplicada e teto de risco ativado."
+    - Ação Determinística: Ao detectar esta divergência, o modelo aciona imediatamente o Nível de Alerta com teto máximo de 6.0 no Score de Confluência.
+    </regra_anti_vies>
+    
+    <regra_forte>
+        **Divergência Onchain vs. Preço**:
+        - Se houver forte divergência entre ação de preço + indicadores técnicos e os dados onchain, dar peso alto na análise apenas se houver dados numéricos reais e válidos. Na ausência de dados válidos, ignore o Onchain no cálculo final.
+    </regra_forte>
+    </protocolo_de_cruzamento_de_dados>
+
+    <fluxo_de_trabalho>
+        <passo n="0">O Agente Coletor lista todas as variáveis exigidas. Se alguma contiver a string exata 'Dado Ausente', acionar a ferramenta de busca para esta variável específica antes do Raciocínio Interno.</passo>
+        <passo n="1">O Agente 0 processa e estrutura internamente todos os dados atualizados (onchain + técnico).</passo>
+        <passo n="2">Raciocínio interno estritamente oculto (Chain-of-Thought nativo). Processe internamente a contagem de agentes alinhados, divergências, veto e tier selecionado sem exibir blocos de texto longos.</passo>
+        <passo n="3">Executar a Mesa Redonda (debate cruzado e aplicação do protocolo de cruzamento). O Agente 5 age estritamente como o Advogado do Diabo, tentando encontrar falhas e refutar as conclusões de tendência.</passo>
+        <passo n="4">O Agente Sintetizador assume o controle, compila as análises e gera a saída final seguindo estritamente o template da 'saída_arquitetura_obrigatoria', integrando a linha compacta de metadados de auditoria.</passo>
+    </fluxo_de_trabalho>
+
+    <saída_arquitetura_obrigatoria>
+    💎 **${currentCrypto.name}** | 📅 [Data/Hora UTC]
+
+    🔬 [Audit: Tier: [Nome] | Contagem: [X/5] | Div: [Sim/Não] | Veto: [Ativado/Desativado]]
+
+    **📡 DADOS:** [Preço | RSI | Volume | OI | CVD | L/S]
+
+    **👽 MESA DOS AGENTES:**
+    * **EMAs (👽):** [Resumo de 1 linha sobre tendência e alinhamento]
+    * **Price Action (🐸):** [Resumo de 1 linha sobre padrão de candle]
+    * **Volume/VSA (👾):** [Resumo de 1 linha sobre fluxo e CVD]
+    * **RSI/Momentum (🤖):** [Resumo de 1 linha sobre oscilador e divergências]
+    * **Teoria dos Jogos (👹):** [Resumo de 1 linha sobre armadilhas ou squeezes]
+
+    **🔬 SÍNTESE & SCORE**
+    * **Score de Confluência:** **X.X/10** ([Qualificação] | Tier: [Nome] | Div. Crítica: [Sim/Não])
+    * **Projeção:** [Queda / Consolidação / Subida] (Probabilidade: XX%)
+
+    | Tipo | Preço ($) | Justificativa Técnica Curta |
+    | :--- | :--- | :--- |
+    | **Suporte 1 (Imediato)** | [$X.XX] | [Motivo] |
+    | **Suporte 2 (Estrutural)** | [$X.XX] | [Motivo] |
+    | **Resistência 1 (Imediata)**| [$X.XX] | [Motivo] |
+    | **Resistência 2 (Macro)** | [$X.XX] | [Motivo] |
+
+    **🎯 SETUP DE OPERAÇÃO:**
+    * **Spot:** Entrada: [$X] \vert{} Saída: [$X]
+    * **Alavancado:** [Long / Short / Wait] | Entrada: [$X] | SL: [$X] \vert{} TP: [$X] | Motivo: [Resumo]
+
+    ⚠️ *Aviso: Ferramenta estritamente educacional baseada em probabilidades matemáticas. Criptoativos envolvem alto risco de perda total de capital. Gerencie seu risco e utilize stop-loss.*
+    </saída_arquitetura_obrigatoria>
+</instrução_sistema>`;
+        }
+
+        async function enviarParaTelegram(mensagem) {
+            const token = aiState.tgToken;
+            const chatId = aiState.tgChat;
+
+            if (!token || !chatId) {
+                return; 
+            }
+
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: mensagem,
+                        parse_mode: 'HTML'
+                    })
+                });
+
+                if (response.ok) {
+                    aiToast('🚀 Relatório enviado para o Telegram!');
+                } else {
+                    console.error("Falha ao enviar Telegram", await response.json());
+                    aiToast('❌ Erro ao enviar para o Telegram. Verifique Token/Chat ID.');
+                }
+            } catch (error) {
+                console.error("Erro na requisição do Telegram:", error);
+                aiToast('❌ Falha de conexão com o Telegram.');
+            }
+        }
+
+        async function runAnalysis() {
+            if (currentCrypto.symbol === 'BNSOLUSDT' || currentCrypto.symbol === 'WBETHUSDT') {
+                aiToast('❌ Análise de IA desativada para BNSOL e WBETH.');
+                return;
+            }
+            if (!aiState.connected) { aiToast('❌ Conecte a API primeiro.'); return; }
+            if (globalCooldown > 0) { aiToast('⏳ Aguarde o tempo de recarga!'); return; }
+            if (aiState.runningAnalysis) return;
+            startGlobalCooldown();
+
+            aiToast('⚠️ Coletando dados primeiro...'); await collectData(true);
+
+            aiState.runningAnalysis = true; document.getElementById('cardAnalise').classList.add('loading'); 
+            if (globalCooldown === 0) document.getElementById('labelAnalise').textContent = 'Analisando...';
+            setStatus('loading','Gerando análise IA...');
+            const panel = document.getElementById('resultPanel'); const body = document.getElementById('resultBody');
+            panel.classList.add('visible'); body.textContent = '👽🐸👾🤖👹 Processando debate multiagentes...\n🔬 Sintetizando...';
+
+            const userPrompt = `Aqui estão os dados capturados em tempo real de ${currentCrypto.name}:\n\n${aiState.rawDataText}\n\nExecute o debate e entregue estritamente a saída final parametrizada.`;
+
+            try {
+                let res;
+                if (aiState.provider === 'gemini') {
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${aiState.apiKey}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ systemInstruction: { parts: [{ text: getSystemPrompt() }] }, contents: [{ parts: [{ text: userPrompt }] }] }) });
+                    if (r.status === 200) { const d = await r.json(); res = d.candidates[0].content.parts[0].text; } else res = 'Erro Gemini';
+                } else {
+                    const r = await fetch('https://api.x.ai/v1/chat/completions', { method: 'POST', headers: {'Authorization':`Bearer ${aiState.apiKey}`,'Content-Type':'application/json'}, body: JSON.stringify({ model: 'grok-4.3', messages: [ { role: 'system', content: getSystemPrompt() }, { role: 'user', content: userPrompt } ] }) });
+                    if (r.status === 200) { const d = await r.json(); res = d.choices[0].message.content; } else res = 'Erro Grok';
+                }
+                
+                body.textContent = res; setStatus('connected', `Conectado · ${aiState.provider.toUpperCase()}`); aiToast('✅ Relatório gerado!');
+                
+                const agora = new Date();
+                const dataHoraStr = agora.toLocaleString('pt-BR');
+                const headerData = `===========================================\n🕒 ANÁLISE GERADA EM: ${dataHoraStr}\n===========================================\n\n`;
+                const relatorioFinalIA = headerData + res;
+
+                document.getElementById('aiDashboardResultBox').value = relatorioFinalIA;
+                document.getElementById('aiDashboardResultContainer').style.display = 'block';
+                localStorage.setItem('cryptoUltimaAnaliseIA', relatorioFinalIA);
+
+                enviarParaTelegram(relatorioFinalIA);
+                
+            } catch(e) { body.textContent = `Erro: ${e.message}`; setStatus('error','Erro'); aiToast('❌ Erro na geração.'); }
+            
+            document.getElementById('cardAnalise').classList.remove('loading'); 
+            if (globalCooldown === 0) document.getElementById('labelAnalise').textContent = 'Consultar MultiAgentes - IA'; 
+            aiState.runningAnalysis = false;
+        }
+
+        async function generatePromptFile() {
+            if (currentCrypto.symbol === 'BNSOLUSDT' || currentCrypto.symbol === 'WBETHUSDT') {
+                aiToast('❌ Geração de prompt desativada para BNSOL e WBETH.');
+                document.getElementById('stakingWarningBox').style.display = 'block';
+                return;
+            }
+            if (globalCooldown > 0) { aiToast('⏳ Aguarde o tempo de recarga!'); return; }
+            startGlobalCooldown();
+
+            document.getElementById('cardPrompt').classList.add('loading'); 
+            if (globalCooldown === 0) document.getElementById('labelPrompt').textContent = 'Gerando...';
+            
+            aiToast('⚠️ Coletando dados primeiro...'); await collectData(true);
+            const conteudo = `${aiState.rawDataText}\n\n${getSystemPrompt()}`;
+            const nome = `${new Date().toISOString().slice(0,19).replace(/[:.]/g,'-')}_${currentCrypto.symbol}.txt`;
+            const b = new Blob([conteudo], { type: 'text/plain;charset=utf-8' }); const l = document.createElement('a');
+            l.href = URL.createObjectURL(b); l.download = nome; l.click(); URL.revokeObjectURL(l.href);
+            aiToast(`📋 Prompt salvo: ${nome}`); 
+            
+            document.getElementById('cardPrompt').classList.remove('loading'); 
+            if (globalCooldown === 0) document.getElementById('labelPrompt').textContent = 'Gerar Prompt';
+            
+            alert("CARREGUE o arquivo TXT no CHAT DE UMA IA e obtenha a análise do momento. Ele analisará os dados da data e do momento que foi gerado. Atenção: Se o prompt for usado muito tempo após ser gerado, ele entregará análises incorretas devido a defasagem de dados.");
+        }
+
+        function copyRaw() { navigator.clipboard.writeText(aiState.rawDataText).then(() => aiToast('📋 Dados brutos copiados!')); }
+        function downloadRaw() { const n = `${currentCrypto.symbol}_dados_brutos.txt`; const b = new Blob([aiState.rawDataText], {type:'text/plain;charset=utf-8'}); const l = document.createElement('a'); l.href=URL.createObjectURL(b); l.download=n; l.click(); URL.revokeObjectURL(l.href); }
+        function copyResult() { navigator.clipboard.writeText(document.getElementById('resultBody').textContent).then(() => aiToast('📋 Relatório copiado!')); }
+        
+        function resetApp() {
+            localStorage.removeItem('global_intel_apiKey'); localStorage.removeItem('global_intel_tgToken'); localStorage.removeItem('global_intel_tgChat'); localStorage.removeItem('global_intel_provider');
+            aiState = { provider:'', apiKey:'', tgToken:'', tgChat:'', connected:false, collectingData:false, runningAnalysis:false, rawDataText:'', lastCollected:null };
+            document.getElementById('apiKeyInput').value = ''; document.getElementById('apiKeyInput').disabled = false;
+            document.getElementById('tgTokenInput').value = ''; document.getElementById('tgTokenInput').disabled = false;
+            document.getElementById('tgChatInput').value = ''; document.getElementById('tgChatInput').disabled = false;
+            
+            document.getElementById('apiProviderSelect').disabled = false;
+            
+            document.getElementById('btnConnect').textContent = 'Conectar'; document.getElementById('btnConnect').disabled = true;
+            document.getElementById('cardAnalise').classList.add('disabled'); setStatus('','Desconectado'); setProvider(''); aiToast('App reiniciado.');
+        }
+
+        function atualizarStatusInternet(evento) {
+            const estaOnline = navigator.onLine;
+            
+            const botaoAgente = document.getElementById('btnAbrirAgenteSelector');
+            const seletorAgente = document.getElementById('cryptoSelect');
+            
+            if (botaoAgente && seletorAgente) {
+                if (estaOnline) {
+                    botaoAgente.disabled = false;
+                    botaoAgente.style.opacity = "1";
+                    botaoAgente.style.cursor = "pointer";
+                    seletorAgente.disabled = false;
+                } else {
+                    botaoAgente.disabled = true;
+                    botaoAgente.style.opacity = "0.3";
+                    botaoAgente.style.cursor = "not-allowed";
+                    seletorAgente.disabled = true;
+                }
+            }
+
+            if (!estaOnline) {
+                aiToast("⚠️ Sem conexão com a internet! Seletor desativado.");
+                
+                const statusText = document.getElementById('statusText');
+                const statusDot = document.getElementById('statusDot');
+                if (statusText && statusDot) {
+                    statusText.textContent = "Sem conexão";
+                    statusDot.className = "ai-status-dot error";
+                }
+            } else if (evento && evento.type === 'online') {
+                aiToast("📶 Conexão restabelecida! Controles ativos.");
+            }
+        }
+
+        window.addEventListener('online', atualizarStatusInternet);
+        window.addEventListener('offline', atualizarStatusInternet);
+        window.addEventListener('load', () => setTimeout(atualizarStatusInternet, 500));
+
+        // =========================================================================
+        // BACKUP: EXPORTAÇÃO E IMPORTAÇÃO dE TRADES
+        // =========================================================================
+
+        function exportarBackup() {
+            const dados = localStorage.getItem('cryptoTradesData');
+            if (!dados || dados === '[]') {
+                alert("Não há dados de operações para exportar.");
+                return;
+            }
+
+            const dataStr = new Date().toISOString().slice(0, 10);
+            const nomeArquivo = `Backup_Trades_Ultravision_${dataStr}.json`;
+            const blob = new Blob([dados], { type: 'application/json;charset=utf-8' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = nomeArquivo;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            aiToast("✅ Backup exportado com sucesso!");
+        }
+
+        function processarImportacao(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const conteudo = e.target.result;
+                    
+                    const jsonDados = JSON.parse(conteudo);
+                    if (!Array.isArray(jsonDados)) {
+                        throw new Error("Formato inválido. O arquivo deve conter uma lista formatada em JSON.");
+                    }
+                    
+                    mostrarConfirmacao("Isto substituirá TODOS os seus registros atuais pelos do arquivo de backup. Deseja continuar?", () => {
+                        localStorage.setItem('cryptoTradesData', JSON.stringify(jsonDados));
+                        
+                        carregarDados();
+                        atualizarDashboard();
+                        
+                        aiToast("📥 Backup importado com sucesso!");
+                        document.getElementById('importBackupFile').value = '';
+                    });
+                } catch (err) {
+                    alert("Erro ao importar o arquivo. Certifique-se de ser o arquivo JSON gerado pelo sistema.\nDetalhes: " + err.message);
+                    document.getElementById('importBackupFile').value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // =========================================================================
+        // LÓGICA CALCULADORA DE STAKING COM CHARTJS E CONVERSÃO CRIPTO
+        // =========================================================================
+
+        let stakingChartInstance = null;
+        let stakingUpdateCooldown = 0;
+        let stakingUpdateInterval = null;
+
+        function abrirCalculadoraStaking() {
+            document.getElementById('stakingModal').classList.add('active');
+            selecionarMoedaStaking(); 
+        }
+
+        function fecharCalculadoraStaking() {
+            document.getElementById('stakingModal').classList.remove('active');
+        }
+
+        async function atualizarDadosStaking() {
+            if (stakingUpdateCooldown > 0) {
+                aiToast(`⏳ Aguarde ${stakingUpdateCooldown}s para atualizar novamente.`);
+                return;
+            }
+
+            const btn = document.getElementById('btnAtualizarAPY');
+            btn.textContent = '⏳ Atualizando...';
+            
+            await fetchGlobalYields();
+            await fetchStakingPrices();
+            selecionarMoedaStaking();
+            
+            stakingUpdateCooldown = 60;
+            btn.textContent = `⏳ ${stakingUpdateCooldown}s`;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+
+            stakingUpdateInterval = setInterval(() => {
+                stakingUpdateCooldown--;
+                if (stakingUpdateCooldown > 0) {
+                    btn.textContent = `⏳ ${stakingUpdateCooldown}s`;
+                } else {
+                    clearInterval(stakingUpdateInterval);
+                    btn.textContent = '🔄 Atualizar APY';
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            }, 1000);
+
+            aiToast('✅ Dados e APYs atualizados!');
+        }
+
+        function selecionarMoedaStaking() {
+            const coin = document.getElementById('stakingCoinSelect').value;
+            const apy = apyData[coin] || 0;
+            document.getElementById('stakingApy').value = apy.toFixed(2);
+            calcularStaking();
+        }
+
+        function calcularStaking() {
+            const principal = parseFloat(document.getElementById('stakingInitial').value) || 0;
+            const apy = parseFloat(document.getElementById('stakingApy').value) || 0;
+            const years = parseFloat(document.getElementById('stakingYears').value) || 0;
+
+            const labels = [];
+            const dataPrincipal = [];
+            const dataLucro = [];
+            
+            const steps = Math.max(10, Math.ceil(years * 2));
+            const stepSize = years / steps;
+
+            for (let i = 0; i <= steps; i++) {
+                const t = i * stepSize;
+                const amount = principal * Math.pow(1 + (apy / 100), t);
+                labels.push(t.toFixed(1) + 'a');
+                dataPrincipal.push(principal);
+                dataLucro.push(amount - principal);
+            }
+
+            const finalAmount = principal * Math.pow(1 + (apy / 100), years);
+            const finalLucro = finalAmount - principal;
+
+            const coin = document.getElementById('stakingCoinSelect').value;
+            
+            let displayCoin = coin;
+            let currentPrice = stakingCryptoPrices[coin] || 1;
+            
+            if (coin === 'BNSOL') {
+                displayCoin = 'SOL';
+                currentPrice = stakingCryptoPrices['SOL'] || 1;
+            } else if (coin === 'WBETH') {
+                displayCoin = 'ETH';
+                currentPrice = stakingCryptoPrices['ETH'] || 1;
+            }
+            
+            const initialCrypto = (principal / currentPrice).toFixed(4);
+            const finalCrypto = (finalAmount / currentPrice).toFixed(4);
+            const lucroCrypto = (finalLucro / currentPrice).toFixed(4);
+
+            document.getElementById('stakingSaldoFinal').textContent = 'US$ ' + finalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('stakingLucroTotal').textContent = 'US$ ' + finalLucro.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            document.getElementById('stakingInitialCrypto').textContent = `≈ ${initialCrypto} ${displayCoin}`;
+            document.getElementById('stakingSaldoFinalCrypto').textContent = `≈ ${finalCrypto} ${displayCoin}`;
+            document.getElementById('stakingLucroTotalCrypto').textContent = `≈ ${lucroCrypto} ${displayCoin}`;
+
+            desenharGraficoStaking(labels, dataPrincipal, dataLucro);
+        }
+
+        function desenharGraficoStaking(labels, dataPrincipal, dataLucro) {
+            const ctx = document.getElementById('stakingChartCanvas').getContext('2d');
+            if (stakingChartInstance) {
+                stakingChartInstance.destroy();
+            }
+
+            Chart.defaults.color = '#8e8e93';
+            Chart.defaults.font.family = "'Inter', sans-serif";
+
+            stakingChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Lucro (Rendimento)',
+                            data: dataLucro,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.9)',
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 0,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Principal',
+                            data: dataPrincipal,
+                            borderColor: '#4a8bf6',
+                            backgroundColor: 'rgba(74, 139, 246, 0.9)',
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 0,
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: '#f5f5f7', usePointStyle: true, boxWidth: 8 } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#8e8e93' } },
+                        y: { 
+                            stacked: true, 
+                            grid: { color: '#2a2a2e' }, 
+                            ticks: { 
+                                color: '#f5f5f7',
+                                callback: function(value) { return '$' + value; }
+                            } 
+                        }
+                    }
+                }
+            });
+        }
+        
+    </script>
+</body>
+</html>
